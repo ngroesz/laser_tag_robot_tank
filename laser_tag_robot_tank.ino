@@ -7,7 +7,6 @@ int turret_calibration_pin = 14;
 
 short turret_direction = 0;
 volatile long turret_encoder_count = 0;
-volatile int turret_position = 0;
 volatile bool turret_has_been_calibrated = false;
 
 unsigned long current_millis;
@@ -53,33 +52,32 @@ void turret_calibration_interrupt()
     }
 
     turret_has_been_calibrated = true;
-    turret_position = 0;
     turret_encoder_count = 0;
     last_turret_calibration_millis = current_millis;
 }
 
 void turret_encoder_interrupt()
 {
-    //turret_position += 1;
     turret_encoder_count += turret_direction;
-    //Serial.println("encoder interrupt");
-    //turret_position += 1;
 }
 
-void calculate_turret_position()
+int turret_position()
 {
     if (!turret_has_been_calibrated) {
-        return;
+        return -1;
     }
 
-    turret_position = int(turret_encoder_count / (turret_gear_ratio / 360));
+    int turret_position = int(turret_encoder_count / (turret_gear_ratio / 360));
 
     if (turret_position > 360) {
         turret_position -= 360;
     } else if(turret_position < 360) {
         turret_position += 360;
     }
+
+    return turret_position;
 }
+
 void setup()
 {
     Serial.begin(9600);
@@ -104,10 +102,8 @@ void loop()
     if (current_millis >= last_output_millis + 1000) {
         if (turret_has_been_calibrated) {
             Serial.print("turret position: " );
-            Serial.println(turret_position);
+            Serial.println(turret_position());
         }
-        //Serial.print(" turret encoder count: " );
-        //Serial.println(turret_encoder_count);
         last_output_millis = current_millis;
     }
 
@@ -121,6 +117,4 @@ void loop()
         }
         last_turret_change_millis = current_millis;
     }
-
-    calculate_turret_position();
 }
