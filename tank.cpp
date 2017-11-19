@@ -3,6 +3,11 @@
 
 #include "tank.h"
 
+volatile long _turret_encoder_count = 0;
+volatile bool _turret_has_been_calibrated = false;
+volatile unsigned long _last_turret_calibration_millis = 0;
+short _turret_direction = 0;
+
 void turret_calibration_interrupt()
 {
     unsigned long current_millis = millis();

@@ -1,20 +1,20 @@
 #include "tank.h"
 
-const int turret_motor_pins[] = {8, 7};
-
-int turret_encoder_pin = 13;
-int turret_calibration_pin = 14;
+#define TURRET_MOTOR_LEFT_PIN 8
+#define TURRET_MOTOR_RIGHT_PIN 7
+#define TURRET_ENCODER_PIN 13
+#define TURRET_CALIBRATION_PIN 14
 
 unsigned long current_millis;
 unsigned long last_output_millis = 0;
 unsigned long last_turret_change_millis = 0;
 
-volatile long _turret_encoder_count = 0;
-volatile bool _turret_has_been_calibrated = false;
-volatile unsigned long _last_turret_calibration_millis = 0;
-short _turret_direction = 0;
-
-Tank tank(8, 7, 13, 14);
+Tank tank(
+    TURRET_MOTOR_LEFT_PIN,
+    TURRET_MOTOR_RIGHT_PIN,
+    TURRET_ENCODER_PIN,
+    TURRET_CALIBRATION_PIN
+);
 
 void setup()
 {
