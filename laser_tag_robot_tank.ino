@@ -37,12 +37,11 @@ void setup()
 {
     Serial.begin(9600);
 
+    tank.setup();
     Serial.println("Initialized.");
-    digitalWrite(6, HIGH);
 }
 
 void loop()
 {
-    tank.do_loop();
-    current_millis = millis();
+    tank.loop();
 }

@@ -1,7 +1,7 @@
 #ifndef tank_h
 #define tank_h
 
-#include "external_libraries/IRremote/IRremote.h"
+#include "IRremote.h"
 #include "Arduino.h"
 
 // delay between motor changing directions. to reduce strain on motors.
@@ -24,18 +24,19 @@
 // Interupt routines and variables cannot be members of a class
 // So these are declared outside of Tank
 // variables related to turret
-extern volatile long _turret_encoder_count;
-extern volatile bool _turret_has_been_calibrated;
-extern volatile unsigned long _last_turret_calibration_millis;
-extern short _turret_direction;
-extern volatile unsigned int _sonar_front_distance;
-extern volatile short _sonar_front_state;
-extern volatile unsigned long _sonar_front_timer;
-extern volatile unsigned int _sonar_rear_distance;
-extern volatile short _sonar_rear_state;
-extern volatile unsigned long _sonar_rear_timer;
-extern volatile unsigned short _last_front_distances[];
-extern volatile unsigned short _last_rear_distances[];
+extern volatile long           __turret_encoder_count;
+extern volatile bool           __turret_has_been_calibrated;
+extern volatile unsigned long  __last_turret_calibration_millis;
+extern short                   __turret_direction;
+extern volatile unsigned int   __sonar_front_distance;
+extern volatile short          __sonar_front_state;
+extern volatile unsigned long  __sonar_front_timer;
+extern volatile unsigned int   __sonar_rear_distance;
+extern volatile short          __sonar_rear_state;
+extern volatile unsigned long  __sonar_rear_timer;
+extern volatile unsigned short __last_front_distances[];
+extern volatile unsigned short __last_rear_distances[];
+extern volatile boolean        __ir_data_receiving;
 /* end global variables */
 
 void turret_calibration_interrupt();
@@ -69,7 +70,7 @@ struct blink_mode {
 class Tank {
     public:
         Tank(
-            int ir_reciever_pin,
+            int ir_receiver_pin,
             int motor_enable_pin,
             int turret_encoder_pin,
             int turret_calibration_pin,
@@ -81,7 +82,8 @@ class Tank {
             int led_pin_4
         );
 
-        void do_loop();
+        void setup();
+        void loop();
         void enable_motors();
 
         void drive(int drive_left_value, int drive_right_value);
@@ -113,14 +115,16 @@ class Tank {
 
         const int front_distance();
         const int rear_distance();
+
     private:
         void _initialize_motors();
-        void _initalize_turret_interrupts();
+        void _initalize_turret();
         void _initialize_leds();
         void _initialize_ir();
         void _update_leds();
         void _update_led(int led_pin, unsigned long current_millis, short &on_delay, short &off_delay, boolean &state, unsigned long &last_change_millis);
         void _do_sonar(unsigned short sonar_pin, volatile unsigned long &sonar_timer, volatile short &sonar_state, void (&interrupt)());
+        void _check_for_ir_data();
         //void _do_motors();
         //void _control_motor(
         //    const unsigned short &motor_pin_1,
@@ -162,6 +166,9 @@ class Tank {
 
         struct blink_mode blink_mode;
         struct led_timings led_timings;
+
+        boolean _ir_code_is_queued, _ir_is_disabled;
+        unsigned long _ir_code_that_is_queued, _ir_disabled_millis;
 };
 
 #endif
