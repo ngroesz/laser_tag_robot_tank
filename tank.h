@@ -1,6 +1,7 @@
 #ifndef tank_h
 #define tank_h
 
+#include "external_libraries/IRremote/IRremote.h"
 #include "Arduino.h"
 
 // delay between motor changing directions. to reduce strain on motors.
@@ -27,8 +28,6 @@ extern volatile long _turret_encoder_count;
 extern volatile bool _turret_has_been_calibrated;
 extern volatile unsigned long _last_turret_calibration_millis;
 extern short _turret_direction;
-
-// variables related to sonar
 extern volatile unsigned int _sonar_front_distance;
 extern volatile short _sonar_front_state;
 extern volatile unsigned long _sonar_front_timer;
@@ -45,22 +44,41 @@ void turret_encoder_interrupt();
 void front_sonar_interrupt();
 void rear_sonar_interrupt();
 
+struct led_timings {
+    boolean led1_state;
+    unsigned long led1_last_change_millis;
+    boolean led2_state;
+    unsigned long led2_last_change_millis;
+    boolean led3_state;
+    unsigned long led3_last_change_millis;
+    boolean led4_state;
+    unsigned long led4_last_change_millis;
+};
+
+struct blink_mode {
+    short led1_on_delay;
+    short led1_off_delay;
+    short led2_on_delay;
+    short led2_off_delay;
+    short led3_on_delay;
+    short led3_off_delay;
+    short led4_on_delay;
+    short led4_off_delay;
+};
+
 class Tank {
     public:
         Tank(
+            int ir_reciever_pin,
             int motor_enable_pin,
-            int drive_left_pin_1,
-            int drive_left_pin_2,
-            int drive_right_pin_1,
-            int drive_right_pin_2,
-            int turret_motor_pin_1,
-            int turret_motor_pin_2,
             int turret_encoder_pin,
             int turret_calibration_pin,
+            int sonar_pin_front,
+            int sonar_pin_rear,
             int led_pin_1,
             int led_pin_2,
-            int sonar_pin_front,
-            int sonar_pin_rear
+            int led_pin_3,
+            int led_pin_4
         );
 
         void do_loop();
@@ -82,39 +100,49 @@ class Tank {
         const short turret_direction();
         const bool turret_has_been_calibrated();
 
-        void set_led_1(unsigned int led_on_delay, unsigned int led_off_delay);
-        void set_led_2(unsigned int led_on_delay, unsigned int led_off_delay);
+        void set_blink_mode(
+            short led1_on_delay,
+            short led1_off_delay,
+            short led2_on_delay,
+            short led2_off_delay,
+            short led3_on_delay,
+            short led3_off_delay,
+            short led4_on_delay,
+            short led4_off_delay
+        );
 
         const int front_distance();
         const int rear_distance();
     private:
+        void _initialize_motors();
+        void _initalize_turret_interrupts();
+        void _initialize_leds();
+        void _initialize_ir();
         void _update_leds();
-        void _update_led(unsigned short led_pin);
+        void _update_led(int led_pin, unsigned long current_millis, short &on_delay, short &off_delay, boolean &state, unsigned long &last_change_millis);
         void _do_sonar(unsigned short sonar_pin, volatile unsigned long &sonar_timer, volatile short &sonar_state, void (&interrupt)());
-        void _do_motors();
-        void _control_motor(
-            const unsigned short &motor_pin_1,
-            const unsigned short &motor_pin_2,
-            const int &motor_requested_value,
-            short &motor_direction,
-            bool &motor_is_changing_direction,
-            unsigned long &last_change_millis
-        );
+        //void _do_motors();
+        //void _control_motor(
+        //    const unsigned short &motor_pin_1,
+        //    const unsigned short &motor_pin_2,
+        //    const int &motor_requested_value,
+        //    short &motor_direction,
+        //    bool &motor_is_changing_direction,
+        //    unsigned long &last_change_millis
+        //);
+        IRrecv *ir_receiver;
+        decode_results results;
 
-        // pin values, set by the constructor
+        unsigned short _ir_receiver_pin;
         unsigned short _motor_enable_pin;
-        unsigned short _drive_left_pin_1;
-        unsigned short _drive_left_pin_2;
-        unsigned short _drive_right_pin_1;
-        unsigned short _drive_right_pin_2;
-        unsigned short _turret_motor_pin_1;
-        unsigned short _turret_motor_pin_2;
         unsigned short _turret_encoder_pin;
         unsigned short _turret_calibration_pin;
-        unsigned short _led_pin_1;
-        unsigned short _led_pin_2;
         unsigned short _sonar_pin_front;
         unsigned short _sonar_pin_rear;
+        unsigned short _led_pin_1;
+        unsigned short _led_pin_2;
+        unsigned short _led_pin_3;
+        unsigned short _led_pin_4;
 
         // values for control of left motor
         // _left_motor is the desired direction and speed of the motor, as requested by the user.
@@ -130,16 +158,10 @@ class Tank {
         bool _right_motor_is_changing_direction;
         unsigned long _right_motor_last_direction_change_millis;
 
-        unsigned int _led_1_on_delay;
-        unsigned int _led_1_off_delay;
-        unsigned short _led_1_state;
-        unsigned long _led_1_change_millis;
-        unsigned int _led_2_on_delay;
-        unsigned int _led_2_off_delay;
-        unsigned short _led_2_state;
-        unsigned long _led_2_change_millis;
-
         unsigned long _last_turret_calibration_millis;
+
+        struct blink_mode blink_mode;
+        struct led_timings led_timings;
 };
 
 #endif
