@@ -2,6 +2,9 @@
 
 #define DISTANCE_WARNING 10
 
+#define SHIFT_CLEAR_PIN 0
+#define SHIFT_CLOCK_PIN 0
+#define SHIFT_DATA_PIN 0
 #define LED_PIN_1 4
 #define LED_PIN_2 A3
 #define LED_PIN_3 6
@@ -23,6 +26,9 @@ int spin_delay = 2000;
 Tank tank(
     IR_RECEIVER_PIN,
     MOTOR_ENABLE_PIN,
+    SHIFT_CLEAR_PIN,
+    SHIFT_CLOCK_PIN,
+    SHIFT_DATA_PIN,
     TURRET_ENCODER_PIN,
     TURRET_CALIBRATION_PIN,
     SONAR_FRONT_PIN,

@@ -1,12 +1,13 @@
 # Arduino Make file. Refer to https://github.com/sudar/Arduino-Makefile
 
 BOARD_TAG    = uno
-include /usr/share/arduino/Arduino.mk
+include /usr/local/opt/arduino-mk/Arduino.mk
 ARDMK_DIR = /usr/share/arduino
-ARDUINO_DIR = /usr/share/arduino
+ARDUINO_DIR =  /Applications/Arduino.app/Contents/Java
 MONITOR_PORT = /dev/ttyACM0
 ARDUINO_ARCH_AVR = 1
-
+ARDUINO_SKETCHBOOK = /Users/ngroesz/Documents/Arduino
+ARDUINO_LIBS = IRremote PinChangeInterrupt PVision Wire
 
 # --- leonardo (or pro micro w/leo bootloader)
 #BOARD_TAG    = leonardo

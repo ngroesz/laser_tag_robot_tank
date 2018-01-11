@@ -1,11 +1,10 @@
 #include "Arduino.h"
 #include "PinChangeInterrupt.h"
-#include "IRremote.h"
+#include <IRremote.h>
 #include <Wire.h>
 #include <PVision.h>
 
-#include "ir_codes.h"
-#include "tank_ir.h"
+//#include "tank_ir.h"
 #include "tank.h"
 
 // all the global variables must be intialized here, even if we reinitialize them in the constructor
@@ -64,20 +63,26 @@ void ir_receiver_interrupt()
 }
 
 Tank::Tank(
-    int ir_receiver_pin,
-    int motor_enable_pin,
-    int turret_encoder_pin,
-    int turret_calibration_pin,
-    int sonar_pin_front,
-    int sonar_pin_rear,
-    int led_pin_1,
-    int led_pin_2,
-    int led_pin_3,
-    int led_pin_4
+    uint8_t ir_receiver_pin,
+    uint8_t motor_enable_pin,
+    uint8_t shift_clear_pin,
+    uint8_t shift_clock_pin,
+    uint8_t shift_data_pin,
+    uint8_t turret_encoder_pin,
+    uint8_t turret_calibration_pin,
+    uint8_t sonar_pin_front,
+    uint8_t sonar_pin_rear,
+    uint8_t led_pin_1,
+    uint8_t led_pin_2,
+    uint8_t led_pin_3,
+    uint8_t led_pin_4
 )
 {
     _ir_receiver_pin        = ir_receiver_pin;
     _motor_enable_pin       = motor_enable_pin;
+    _shift_clear_pin        = shift_clear_pin;
+    _shift_clock_pin        = shift_clock_pin;
+    _shift_data_pin         = shift_data_pin;
     _turret_encoder_pin     = turret_encoder_pin;
     _turret_calibration_pin = turret_calibration_pin;
     _sonar_pin_front        = sonar_pin_front;
@@ -102,15 +107,7 @@ void Tank::setup()
 
 void Tank::_initialize_motors()
 {
-    _left_motor_requested_value               = 0;
-    _left_motor_direction                     = 0;
-    _left_motor_is_changing_direction         = false;
-    _left_motor_last_direction_change_millis  = 0;
-
-    _right_motor_requested_value              = 0;
-    _right_motor_direction                    = 0;
-    _right_motor_is_changing_direction        = false;
-    _right_motor_last_direction_change_millis = 0;
+    _left_motor_state.direction = stop;
 
     pinMode(_motor_enable_pin, OUTPUT);
 }
@@ -146,10 +143,11 @@ void Tank::_initialize_ir()
 
 void Tank::loop()
 {
-    _check_for_ir_data();
-    //_do_sonar(_sonar_pin_rear, _sonar_rear_timer, _sonar_rear_state, sonar_rear_interrupt);
-//    _do_motors();
+    _update_ir();
+    _update_motors();
     _update_leds();
+
+    //_update_sonar(_sonar_pin_rear, _sonar_rear_timer, _sonar_rear_state, sonar_rear_interrupt);
     //if (ir_receiver->decode(&results)) {
     //    Serial.print("received:");
     //    Serial.println(results.value);
@@ -169,74 +167,65 @@ void Tank::enable_motors()
     digitalWrite(_motor_enable_pin, HIGH);
 }
 
-//void Tank::_do_motors()
-//{
-//    _control_motor(
-//        _drive_left_pin_1,
-//        _drive_left_pin_2,
-//        _left_motor_requested_value,
-//        _left_motor_direction,
-//        _left_motor_is_changing_direction,
-//        _left_motor_last_direction_change_millis
-//    );
-//
-//    _control_motor(
-//        _drive_right_pin_1,
-//        _drive_right_pin_2,
-//        _right_motor_requested_value,
-//        _right_motor_direction,
-//        _right_motor_is_changing_direction,
-//        _right_motor_last_direction_change_millis
-//    );
-//}
-//
-//void Tank::_control_motor(
-//    const unsigned short &motor_pin_1,
-//    const unsigned short &motor_pin_2,
-//    const int &motor_requested_value,
-//    short &motor_direction,
-//    bool &motor_is_changing_direction,
-//    unsigned long &last_motor_direction_change_millis
-//)
-//{
-//    unsigned long current_millis = millis();
-//
-//    // check if motor is changing direction and if so, set the changing direction flag and stop the motor, and start the timer
-//    if(!motor_is_changing_direction && ((motor_requested_value >= 0 && motor_direction == -1) || (motor_requested_value <= 0 && motor_direction == 1))) {
-//        motor_is_changing_direction = true;
-//        digitalWrite(motor_pin_1, LOW);
-//        digitalWrite(motor_pin_2, LOW);
-//        last_motor_direction_change_millis = current_millis;
-//    }
-//
-//    if (motor_is_changing_direction && current_millis <= last_motor_direction_change_millis + MOTOR_CHANGE_DIRECTION_DELAY_MILLIS) {
-//        return;
-//    }
-//
-//    motor_is_changing_direction = false;
-//
-//    if (current_millis >= last_debug_output_millis + 1000) {
-//        Serial.print("motor request direction: ");
-//        Serial.println(motor_requested_value);
-//    }
-//
-//    if(motor_requested_value > 0) {
-//        digitalWrite(motor_pin_1, HIGH);
-//        digitalWrite(motor_pin_2, LOW);
-//        motor_direction = 1;
-//    } else if(motor_requested_value < 0) {
-//        digitalWrite(motor_pin_1, LOW);
-//        digitalWrite(motor_pin_2, HIGH);
-//        motor_direction = -1;
-//    } else {
-//        digitalWrite(motor_pin_1, LOW);
-//        digitalWrite(motor_pin_2, LOW);
-//        motor_direction = 0;
-//    }
-//
-//}
+void Tank::_update_motors()
+{
+    _update_motor_directions();
+}
 
-void Tank::_do_sonar(const unsigned short sonar_pin, volatile unsigned long &sonar_timer, volatile short &sonar_state, void (&interrupt)())
+void Tank::_update_motor_directions()
+{
+    _update_motor_direction(_left_motor_state);
+    _update_motor_direction(_right_motor_state);
+    _update_motor_direction(_turret_motor_state);
+
+    unsigned char new_motor_control_code = _create_motor_control_code();
+    if (new_motor_control_code != _motor_control_code) {
+        _motor_control_code = new_motor_control_code;
+        _write_motor_control_code(_motor_control_code);
+    }
+}
+
+void Tank::_update_motor_direction(struct motor_state & motor_state)
+{
+    unsigned long current_millis = millis();
+
+    if (motor_state.direction != motor_state.requested_direction) {
+        if (current_millis > motor_state.direction_change_request_millis + MOTOR_CHANGE_DIRECTION_DELAY_MILLIS) {
+            motor_state.direction = motor_state.requested_direction;
+        }
+    }
+}
+
+unsigned char Tank::_create_motor_control_code()
+{
+    unsigned char control_code = 0;
+
+    if (_turret_motor_state.direction == forward) {
+        control_code |= _motor_control_mapping.turret_left;
+    } else if (_turret_motor_state.direction == reverse) {
+        control_code |= _motor_control_mapping.turret_right;
+    }
+
+    if (_left_motor_state.direction == forward) {
+        control_code |= _motor_control_mapping.left_track_forward;
+    } else if (_left_motor_state.direction == reverse) {
+        control_code |= _motor_control_mapping.left_track_reverse;
+    }
+
+    if (_right_motor_state.direction == forward) {
+        control_code |= _motor_control_mapping.right_track_forward;
+    } else if (_right_motor_state.direction == reverse) {
+        control_code |= _motor_control_mapping.right_track_reverse;
+    }
+
+    return control_code;
+}
+
+void Tank::_write_motor_control_code(const unsigned char & control_code)
+{
+}
+
+void Tank::_update_sonar(const unsigned short sonar_pin, volatile unsigned long &sonar_timer, volatile short &sonar_state, void (&interrupt)())
 {
     switch(sonar_state) {
         case 1: // state ready
@@ -270,50 +259,92 @@ void Tank::_do_sonar(const unsigned short sonar_pin, volatile unsigned long &son
     }
 }
 
-void Tank::drive(int drive_left_value, int drive_right_value)
+void Tank::drive(const motor_direction left_direction, const motor_direction right_direction, const uint8_t left_speed, const uint8_t right_speed)
 {
-    drive_left_track(drive_left_value);
-    drive_right_track(drive_right_value);
+    control_left_motor(left_direction, left_speed);
+    control_right_motor(right_direction, right_speed);
 }
 
-void Tank::drive_forward()
+void Tank::drive_forward(const uint8_t left_speed, const uint8_t right_speed)
 {
-    drive_left_track(255);
-    drive_right_track(255);
+    control_left_motor(forward, left_speed);
+    control_right_motor(forward, right_speed);
 }
 
-void Tank::drive_reverse()
+void Tank::drive_reverse(const uint8_t left_speed, const uint8_t right_speed)
 {
-    drive_left_track(-255);
-    drive_right_track(-255);
+    control_left_motor(reverse, left_speed);
+    control_right_motor(reverse, right_speed);
 }
 
 void Tank::drive_stop()
 {
-    drive_left_track(0);
-    drive_right_track(0);
+    control_left_motor(stop);
+    control_right_motor(stop);
 }
 
-void Tank::drive_turn_left()
+void Tank::drive_turn_left(uint8_t left_speed, const uint8_t right_speed)
 {
-    drive_left_track(-255);
-    drive_right_track(255);
+    control_left_motor(reverse, left_speed);
+    control_right_motor(forward, right_speed);
 }
 
-void Tank::drive_turn_right()
+void Tank::drive_turn_right(uint8_t left_speed, const uint8_t right_speed)
 {
-    drive_left_track(255);
-    drive_right_track(-255);
+    control_left_motor(forward, left_speed);
+    control_right_motor(reverse, right_speed);
 }
 
-void Tank::drive_left_track(int drive_value)
+void Tank::control_left_motor(const motor_direction direction, const uint8_t speed)
 {
-    _left_motor_requested_value = drive_value;
+    _left_motor_state.requested_direction = direction;
+
+    if (direction == stop) {
+        _left_motor_state.direction = stop;
+        _left_motor_state.speed = 0;
+    } else if (_left_motor_state.requested_direction != _left_motor_state.direction) {
+        _left_motor_state.direction_change_request_millis = millis();
+    }
 }
 
-void Tank::drive_right_track(int drive_value)
+void Tank::control_right_motor(const motor_direction direction, const uint8_t speed)
 {
-    _right_motor_requested_value = drive_value;
+    _right_motor_state.requested_direction = direction;
+
+    if (direction == stop) {
+        _right_motor_state.direction = stop;
+        _right_motor_state.speed = 0;
+    } else if (_right_motor_state.requested_direction != _right_motor_state.direction) {
+        _right_motor_state.direction_change_request_millis = millis();
+    }
+
+}
+
+void Tank::turret_left(const uint8_t speed)
+{
+    control_turret_motor(reverse, speed);
+}
+
+void Tank::turret_right(const uint8_t speed)
+{
+    control_turret_motor(forward, speed);
+}
+
+void Tank::turret_stop()
+{
+    control_turret_motor(stop);
+}
+
+void Tank::control_turret_motor(const motor_direction direction, const uint8_t speed)
+{
+    _turret_motor_state.requested_direction = direction;
+
+    if (direction == stop) {
+        _turret_motor_state.direction = stop;
+        _turret_motor_state.speed = 0;
+    } else if (_turret_motor_state.requested_direction != _turret_motor_state.direction) {
+        _turret_motor_state.direction_change_request_millis = millis();
+    }
 }
 
 const int Tank::front_distance()
@@ -427,27 +458,27 @@ void Tank::_update_leds()
     _update_led(_led_pin_4, current_millis, blink_mode.led4_on_delay, blink_mode.led4_off_delay, led_timings.led4_state, led_timings.led4_last_change_millis);
 }
 
-void Tank::_check_for_ir_data()
+void Tank::_update_ir()
 {
-    unsigned long current_millis = millis();
-    if (__ir_data_receiving && !_ir_is_disabled) {
-        _ir_is_disabled = 1;
-        noInterrupts();
-        unsigned long result = read_ir_data(_ir_receiver_pin);
-        _ir_disabled_millis = current_millis;
-        __ir_data_receiving = false;
-        interrupts();
+    //unsigned long current_millis = millis();
+    //if (__ir_data_receiving && !_ir_is_disabled) {
+    //    _ir_is_disabled = 1;
+    //    noInterrupts();
+    //    unsigned long result = read_ir_data(_ir_receiver_pin);
+    //    _ir_disabled_millis = current_millis;
+    //    __ir_data_receiving = false;
+    //    interrupts();
 
-        Serial.print("result: ");
-        Serial.println(result);
-        if (result == IR_CODE_A) {
-            set_blink_mode(0, -1, 500, 500, 500, 500, 0, -1);
-        } else if(result == IR_CODE_B) {
-            set_blink_mode(500, 500, 500, 500, 500, 500, 500, 500);
-        }
-    }
+    //    Serial.print("result: ");
+    //    Serial.println(result);
+    //    if (result == IR_CODE_A) {
+    //        set_blink_mode(0, -1, 500, 500, 500, 500, 0, -1);
+    //    } else if(result == IR_CODE_B) {
+    //        set_blink_mode(500, 500, 500, 500, 500, 500, 500, 500);
+    //    }
+    //}
 
-    if (_ir_is_disabled && current_millis > _ir_disabled_millis + IR_DELAY_BETWEEN_TRANSMISSIONS_MILLIS) {
-        _ir_is_disabled = 0;
-    }
+    //if (_ir_is_disabled && current_millis > _ir_disabled_millis + IR_DELAY_BETWEEN_TRANSMISSIONS_MILLIS) {
+    //    _ir_is_disabled = 0;
+    //}
 }
