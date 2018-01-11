@@ -3,6 +3,7 @@
 
 #include "IRremote.h"
 #include "Arduino.h"
+#include "tank_led.h"
 
 // delay between motor changing directions. to reduce strain on motors.
 #define MOTOR_CHANGE_DIRECTION_DELAY_MILLIS 100
@@ -45,26 +46,10 @@ void turret_encoder_interrupt();
 void front_sonar_interrupt();
 void rear_sonar_interrupt();
 
-struct led_timings {
-    boolean led1_state;
-    unsigned long led1_last_change_millis;
-    boolean led2_state;
-    unsigned long led2_last_change_millis;
-    boolean led3_state;
-    unsigned long led3_last_change_millis;
-    boolean led4_state;
-    unsigned long led4_last_change_millis;
-};
-
-struct blink_mode {
-    short led1_on_delay;
-    short led1_off_delay;
-    short led2_on_delay;
-    short led2_off_delay;
-    short led3_on_delay;
-    short led3_off_delay;
-    short led4_on_delay;
-    short led4_off_delay;
+enum tank_mode {
+    fight,
+    drive,
+    turret
 };
 
 enum motor_direction {
@@ -89,7 +74,8 @@ struct motor_control_mapping {
     unsigned int right_track_forward;
 };
 
-class Tank {
+class Tank
+{
     public:
         Tank(
             uint8_t ir_receiver_pin,
@@ -128,34 +114,25 @@ class Tank {
         const short turret_direction();
         const bool turret_has_been_calibrated();
 
-        void set_blink_mode(
-            short led1_on_delay,
-            short led1_off_delay,
-            short led2_on_delay,
-            short led2_off_delay,
-            short led3_on_delay,
-            short led3_off_delay,
-            short led4_on_delay,
-            short led4_off_delay
-        );
-
         const int front_distance();
         const int rear_distance();
 
     private:
         void _initialize_motors();
         void _initalize_turret();
-        void _initialize_leds();
         void _initialize_ir();
-        void _update_leds();
-        void _update_led(int led_pin, unsigned long current_millis, short &on_delay, short &off_delay, boolean &state, unsigned long &last_change_millis);
         void _update_sonar(unsigned short sonar_pin, volatile unsigned long &sonar_timer, volatile short &sonar_state, void (&interrupt)());
         void _update_ir();
+        void _process_ir_code(unsigned long & ir_code);
         void _update_motors();
         void _update_motor_directions();
         void _update_motor_direction(struct motor_state & state);
         unsigned char _create_motor_control_code();
         void _write_motor_control_code(const unsigned char & control_code);
+
+        TankLED _tank_led;
+
+        tank_mode _tank_mode;
 
         uint8_t _ir_receiver_pin;
         uint8_t _motor_enable_pin;
@@ -176,9 +153,6 @@ class Tank {
         struct motor_state _left_motor_state, _right_motor_state, _turret_motor_state;
 
         unsigned long _last_turret_calibration_millis;
-
-        struct blink_mode blink_mode;
-        struct led_timings led_timings;
 
         boolean _ir_code_is_queued, _ir_is_disabled;
         unsigned long _ir_code_that_is_queued, _ir_disabled_millis;

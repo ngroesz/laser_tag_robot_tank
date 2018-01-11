@@ -41,7 +41,7 @@ Tank tank(
 
 void setup()
 {
-    Serial.begin(9600);
+    Serial.begin(115200);
 
     tank.setup();
     Serial.println("Initialized.");

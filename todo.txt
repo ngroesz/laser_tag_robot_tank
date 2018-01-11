@@ -1,0 +1,4 @@
+- implement new led logic (in a separate class?)
+- add motor logic back in
+- make all interrupts merely set a flag
+- remove distance averaging?

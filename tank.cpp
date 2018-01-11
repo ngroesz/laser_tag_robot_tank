@@ -4,7 +4,7 @@
 #include <Wire.h>
 #include <PVision.h>
 
-//#include "tank_ir.h"
+#include "tank_ir.h"
 #include "tank.h"
 
 // all the global variables must be intialized here, even if we reinitialize them in the constructor
@@ -93,7 +93,7 @@ Tank::Tank(
     _led_pin_4              = led_pin_4;
 
     _ir_disabled_millis     = 0;
-    __ir_data_receiving      = false;
+    __ir_data_receiving     = false;
     _ir_is_disabled         = false;
 }
 
@@ -101,8 +101,9 @@ void Tank::setup()
 {
     _initialize_motors();
     _initalize_turret();
-    _initialize_leds();
     _initialize_ir();
+    _tank_led.setup(_led_pin_1, _led_pin_2, _led_pin_3, _led_pin_4);
+    _tank_led.led_1_set_state((const uint16_t[]){500, 500, 500, 500}, 4);
 }
 
 void Tank::_initialize_motors()
@@ -121,45 +122,19 @@ void Tank::_initalize_turret()
     //attachPCINT(digitalPinToPCINT(_turret_calibration_pin), turret_calibration_interrupt, RISING);
 }
 
-void Tank::_initialize_leds()
-{
-    pinMode(_led_pin_1, OUTPUT);
-    pinMode(_led_pin_2, OUTPUT);
-    pinMode(_led_pin_3, OUTPUT);
-    pinMode(_led_pin_4, OUTPUT);
-    digitalWrite(_led_pin_1, HIGH);
-    digitalWrite(_led_pin_2, HIGH);
-    digitalWrite(_led_pin_3, HIGH);
-    digitalWrite(_led_pin_4, HIGH);
-    set_blink_mode(0, -1, 0, -1, 0, -1, 0, -1);
-}
-
 void Tank::_initialize_ir()
 {
     pinMode(_ir_receiver_pin, INPUT);
-    attachPCINT(digitalPinToPCINT(_ir_receiver_pin), ir_receiver_interrupt, CHANGE);
-    //attachInterrupt(digitalPinToInterrupt(_ir_receiver_pin), ir_receiver_interrupt, LOW);
+    //attachPCINT(digitalPinToPCINT(_ir_receiver_pin), ir_receiver_interrupt, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(_ir_receiver_pin), ir_receiver_interrupt, LOW);
 }
 
 void Tank::loop()
 {
     _update_ir();
-    _update_motors();
-    _update_leds();
-
+    //_update_motors();
+    _tank_led.loop();
     //_update_sonar(_sonar_pin_rear, _sonar_rear_timer, _sonar_rear_state, sonar_rear_interrupt);
-    //if (ir_receiver->decode(&results)) {
-    //    Serial.print("received:");
-    //    Serial.println(results.value);
-    //    if (results.value == IR_CODE_A) {
-    //        Serial.println("A");
-    //        set_blink_mode(-1, 0, 0, -1, -1, 0, -1, 0);
-    //    } else if (results.value == IR_CODE_B) {
-    //        Serial.println("B");
-    //        set_blink_mode(0, -1, -1, 0, 0, -1, 0, -1);
-    //    } 
-    //    ir_receiver->resume();
-    //} 
 }
 
 void Tank::enable_motors()
@@ -359,32 +334,6 @@ const int Tank::rear_distance()
     return int((__last_rear_distances[0] + __last_rear_distances[1] + __last_rear_distances[2]) / 3);
 }
 
-//void Tank::turret_stop()
-//{
-//    analogWrite(_turret_motor_pin_1, 0);
-//    analogWrite(_turret_motor_pin_2, 0);
-//}
-//
-//void Tank::turret_left()
-//{
-//    if (_turret_direction != -1) {
-//        turret_stop();
-//    }
-//    analogWrite(_turret_motor_pin_1, 255);
-//    analogWrite(_turret_motor_pin_2, 0);
-//    _turret_direction = -1;
-//}
-//
-//void Tank::turret_right()
-//{
-//    if (_turret_direction != 1) {
-//        turret_stop();
-//    }
-//    analogWrite(_turret_motor_pin_1, 0);
-//    analogWrite(_turret_motor_pin_2, 255);
-//    _turret_direction = 1;
-//}
-
 const int Tank::turret_position()
 {
     if (!__turret_has_been_calibrated) {
@@ -412,73 +361,30 @@ const short Tank::turret_direction()
     return __turret_direction;
 }
 
-void Tank::set_blink_mode
-(
-    short led1_on_delay,
-    short led1_off_delay,
-    short led2_on_delay,
-    short led2_off_delay,
-    short led3_on_delay,
-    short led3_off_delay,
-    short led4_on_delay,
-    short led4_off_delay
-)
+void Tank::_update_ir()
 {
-    blink_mode.led1_on_delay  = led1_on_delay;
-    blink_mode.led1_off_delay = led1_off_delay;
-    blink_mode.led2_on_delay  = led2_on_delay;
-    blink_mode.led2_off_delay = led2_off_delay;
-    blink_mode.led3_on_delay  = led3_on_delay;
-    blink_mode.led3_off_delay = led3_off_delay;
-    blink_mode.led4_on_delay  = led4_on_delay;
-    blink_mode.led4_off_delay = led4_off_delay;
-}
+    unsigned long current_millis = millis();
+    if (__ir_data_receiving && !_ir_is_disabled) {
+        _ir_is_disabled = 1;
+        unsigned long result = read_ir_data(_ir_receiver_pin);
+        _ir_disabled_millis = current_millis;
+        __ir_data_receiving = false;
 
-void Tank::_update_led(int led_pin, unsigned long current_millis, short &on_delay, short &off_delay, boolean &state, unsigned long &last_change_millis)
-{
-    if (state == false && off_delay != -1 && last_change_millis + off_delay < current_millis) {
-        // because the LEDs are wired switched-ground, this actually turns the LED on
-        digitalWrite(led_pin, LOW);
-        last_change_millis = current_millis;
-        state = true;
-    } else if(state == true && on_delay != -1 && last_change_millis + on_delay < current_millis) {
-        // turn the LED off
-        digitalWrite(led_pin, HIGH);
-        last_change_millis = current_millis;
-        state = false;
+        //if (result != 0) {
+        //    _process_ir_code(result);
+        //}
+    }
+
+    if (_ir_is_disabled && current_millis > _ir_disabled_millis + IR_DELAY_BETWEEN_TRANSMISSIONS_MILLIS) {
+        _ir_is_disabled = 0;
     }
 }
 
-void Tank::_update_leds()
+void Tank::_process_ir_code(unsigned long & ir_code)
 {
-    unsigned long current_millis = millis();
-    _update_led(_led_pin_1, current_millis, blink_mode.led1_on_delay, blink_mode.led1_off_delay, led_timings.led1_state, led_timings.led1_last_change_millis);
-    _update_led(_led_pin_2, current_millis, blink_mode.led2_on_delay, blink_mode.led2_off_delay, led_timings.led2_state, led_timings.led2_last_change_millis);
-    _update_led(_led_pin_3, current_millis, blink_mode.led3_on_delay, blink_mode.led3_off_delay, led_timings.led3_state, led_timings.led3_last_change_millis);
-    _update_led(_led_pin_4, current_millis, blink_mode.led4_on_delay, blink_mode.led4_off_delay, led_timings.led4_state, led_timings.led4_last_change_millis);
-}
-
-void Tank::_update_ir()
-{
-    //unsigned long current_millis = millis();
-    //if (__ir_data_receiving && !_ir_is_disabled) {
-    //    _ir_is_disabled = 1;
-    //    noInterrupts();
-    //    unsigned long result = read_ir_data(_ir_receiver_pin);
-    //    _ir_disabled_millis = current_millis;
-    //    __ir_data_receiving = false;
-    //    interrupts();
-
-    //    Serial.print("result: ");
-    //    Serial.println(result);
-    //    if (result == IR_CODE_A) {
-    //        set_blink_mode(0, -1, 500, 500, 500, 500, 0, -1);
-    //    } else if(result == IR_CODE_B) {
-    //        set_blink_mode(500, 500, 500, 500, 500, 500, 500, 500);
-    //    }
-    //}
-
-    //if (_ir_is_disabled && current_millis > _ir_disabled_millis + IR_DELAY_BETWEEN_TRANSMISSIONS_MILLIS) {
-    //    _ir_is_disabled = 0;
-    //}
+    if (ir_code == IR_CODE_A) {
+        //_tank_led.led_1_set_state((const uint16_t[]){1000, 500, 1000, 500, 1000, 500}, 6);
+    } else if(ir_code == IR_CODE_B) {
+        //_tank_led.led_1_set_state((const uint16_t[]){500, 500, 500, 500}, 4);
+    }
 }
