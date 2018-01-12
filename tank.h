@@ -1,8 +1,9 @@
 #ifndef tank_h
 #define tank_h
 
-#include "IRremote.h"
-#include "Arduino.h"
+#include <Arduino.h>
+#include <IRremote.h>
+
 #include "tank_led.h"
 
 // delay between motor changing directions. to reduce strain on motors.
@@ -25,19 +26,10 @@
 /* begin global variables */
 // Interupt routines and variables cannot be members of a class
 // So these are declared outside of Tank
-extern volatile long           __turret_encoder_count;
-extern volatile bool           __turret_has_been_calibrated;
-extern volatile unsigned long  __last_turret_calibration_millis;
-extern short                   __turret_direction;
-extern volatile unsigned int   __sonar_front_distance;
-extern volatile short          __sonar_front_state;
-extern volatile unsigned long  __sonar_front_timer;
-extern volatile unsigned int   __sonar_rear_distance;
-extern volatile short          __sonar_rear_state;
-extern volatile unsigned long  __sonar_rear_timer;
-extern volatile unsigned short __last_front_distances[];
-extern volatile unsigned short __last_rear_distances[];
-extern volatile boolean        __ir_data_receiving;
+extern volatile bool __turret_calibration_interrupt_flag;
+extern volatile bool __turret_encoder_interrupt_flag;
+extern volatile bool __sonar_front_interrupt_flag;
+extern volatile bool __sonar_rear_interrupt_flag;
 /* end global variables */
 
 void turret_calibration_interrupt();
@@ -66,12 +58,12 @@ struct motor_state {
 };
 
 struct motor_control_mapping {
-    unsigned int turret_left;
-    unsigned int turret_right;
-    unsigned int left_track_reverse;
-    unsigned int left_track_forward;
-    unsigned int right_track_reverse;
-    unsigned int right_track_forward;
+    uint8_t turret_left;
+    uint8_t turret_right;
+    uint8_t left_track_reverse;
+    uint8_t left_track_forward;
+    uint8_t right_track_reverse;
+    uint8_t right_track_forward;
 };
 
 class Tank
@@ -110,25 +102,36 @@ class Tank
         void turret_right(const uint8_t speed = MOTOR_DEFAULT_SPEED);
         void turret_stop();
         void control_turret_motor(const motor_direction direction, const uint8_t speed = MOTOR_DEFAULT_SPEED);
-        const int turret_position();
+        const uint16_t turret_position();
         const short turret_direction();
         const bool turret_has_been_calibrated();
 
-        const int front_distance();
-        const int rear_distance();
+        const uint8_t front_distance();
+        const uint8_t rear_distance();
 
     private:
         void _initialize_motors();
         void _initalize_turret();
         void _initialize_ir();
+
         void _update_sonar(unsigned short sonar_pin, volatile unsigned long &sonar_timer, volatile short &sonar_state, void (&interrupt)());
-        void _update_ir();
+
         void _process_ir_code(unsigned long & ir_code);
+
         void _update_motors();
         void _update_motor_directions();
         void _update_motor_direction(struct motor_state & state);
         unsigned char _create_motor_control_code();
         void _write_motor_control_code(const unsigned char & control_code);
+
+        void _process_interrupts();
+        void _process_turret_calibration_interrupt();
+        void _process_turret_encoder_interrupt();
+        void _process_sonar_front_interrupt();
+        void _process_sonar_rear_interrupt();
+
+        IRrecv *irrecv;
+        decode_results results;
 
         TankLED _tank_led;
 
@@ -152,10 +155,16 @@ class Tank
         char _motor_control_code;
         struct motor_state _left_motor_state, _right_motor_state, _turret_motor_state;
 
-        unsigned long _last_turret_calibration_millis;
-
-        boolean _ir_code_is_queued, _ir_is_disabled;
-        unsigned long _ir_code_that_is_queued, _ir_disabled_millis;
+        long           _turret_encoder_count = 0;
+        bool           _turret_has_been_calibrated = false;
+        unsigned long  _last_turret_calibration_millis = 0;
+        short          _turret_direction = 0;
+        uint8_t        _sonar_front_distance = -1;
+        short          _sonar_front_state = 0;
+        unsigned long  _sonar_front_timer = 0;
+        uint8_t        _sonar_rear_distance = -1;
+        short          _sonar_rear_state = 0;
+        unsigned long  _sonar_rear_timer = 0;
 };
 
 #endif

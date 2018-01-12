@@ -17,11 +17,6 @@
 #define SONAR_REAR_PIN A2
 
 unsigned long current_millis;
-unsigned long last_output_millis = 0;
-unsigned long last_turret_change_millis = 0;
-
-unsigned long last_spin_millis = 0;
-int spin_delay = 2000;
 
 Tank tank(
     IR_RECEIVER_PIN,
@@ -44,7 +39,7 @@ void setup()
     Serial.begin(115200);
 
     tank.setup();
-    Serial.println("Initialized.");
+    Serial.println("Tank initialized.");
 }
 
 void loop()
