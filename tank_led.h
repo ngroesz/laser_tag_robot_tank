@@ -7,7 +7,7 @@ struct led_state {
     uint8_t led_pin;
     boolean led_is_on_or_off;
     uint8_t state_count;
-    unsigned long states[10];
+    uint16_t states[10];
     uint8_t current_state;
     unsigned long next_state_change;
 };

@@ -36,6 +36,9 @@ void sonar_rear_interrupt()
 Tank::Tank(
     uint8_t ir_receiver_pin,
     uint8_t motor_enable_pin,
+    uint8_t left_motor_pwm_pin,
+    uint8_t right_motor_pwm_pin,
+    uint8_t turret_motor_pwm_pin,
     uint8_t shift_clear_pin,
     uint8_t shift_clock_pin,
     uint8_t shift_data_pin,
@@ -51,6 +54,9 @@ Tank::Tank(
 {
     _ir_receiver_pin        = ir_receiver_pin;
     _motor_enable_pin       = motor_enable_pin;
+    _left_motor_pwm_pin     = left_motor_pwm_pin;
+    _right_motor_pwm_pin    = right_motor_pwm_pin;
+    _turret_motor_pwm_pin   = turret_motor_pwm_pin;
     _shift_clear_pin        = shift_clear_pin;
     _shift_clock_pin        = shift_clock_pin;
     _shift_data_pin         = shift_data_pin;
@@ -66,33 +72,29 @@ Tank::Tank(
 
 void Tank::setup()
 {
-    _initialize_motors();
-    _initalize_turret();
-    _initialize_ir();
-    _tank_led.setup(_led_pin_1, _led_pin_2, _led_pin_3, _led_pin_4);
-    _tank_led.led_1_set_state((const uint16_t[]){500, 500, 500, 500}, 4);
-}
-
-void Tank::_initialize_motors()
-{
-    _left_motor_state.direction = stop;
-
+    // initialize motors
     pinMode(_motor_enable_pin, OUTPUT);
-}
+    pinMode(_left_motor_pwm_pin, OUTPUT);
+    pinMode(_right_motor_pwm_pin, OUTPUT);
+    pinMode(_turret_motor_pwm_pin, OUTPUT);
+    pinMode(_shift_clear_pin, OUTPUT);
+    pinMode(_shift_clock_pin, OUTPUT);
+    pinMode(_shift_data_pin, OUTPUT);
+    _write_motor_control_code(0);
 
-void Tank::_initalize_turret()
-{
+    // initialize turret
     pinMode(_turret_encoder_pin, INPUT_PULLUP);
     //attachPCINT(digitalPinToPCINT(_turret_encoder_pin), turret_encoder_interrupt, CHANGE);
-
     pinMode(_turret_calibration_pin, INPUT_PULLUP);
     //attachPCINT(digitalPinToPCINT(_turret_calibration_pin), turret_calibration_interrupt, RISING);
-}
 
-void Tank::_initialize_ir()
-{
+    // initialize IR
     irrecv = new IRrecv(_ir_receiver_pin);
     irrecv->enableIRIn();
+
+    // initialize LEDs
+    _tank_led.setup(_led_pin_1, _led_pin_2, _led_pin_3, _led_pin_4);
+    _tank_led.led_1_set_state((const uint16_t[]){500, 500, 500, 500}, 4);
 }
 
 void Tank::loop()
@@ -103,57 +105,9 @@ void Tank::loop()
     }
 
     _process_interrupts();
+    _update_motors();
     _tank_led.loop();
-
     //_update_sonar(_sonar_pin_rear, _sonar_rear_timer, _sonar_rear_state, sonar_rear_interrupt);
-}
-
-void Tank::_process_interrupts()
-{
-    if (__turret_calibration_interrupt_flag) {
-        _process_turret_calibration_interrupt();
-        __turret_calibration_interrupt_flag = false;
-    }
-    if (__turret_encoder_interrupt_flag) {
-        _process_turret_encoder_interrupt();
-        __turret_encoder_interrupt_flag = false;
-    }
-    if ( __sonar_front_interrupt_flag) {
-        _process_sonar_front_interrupt();
-        __sonar_front_interrupt_flag = false;
-    }
-    if ( __sonar_rear_interrupt_flag) {
-        _process_sonar_rear_interrupt();
-        __sonar_rear_interrupt_flag = false;
-    }
-}
-
-void Tank::_process_ir_code(unsigned long & ir_code)
-{
-    if (ir_code == IR_CODE_A) {
-        _tank_led.led_1_set_state((const uint16_t[]){500, 500, 500, 500}, 4);
-    } else if(ir_code == IR_CODE_B) {
-        _tank_led.led_1_turn_on();
-        _tank_led.led_2_turn_on();
-        _tank_led.led_3_turn_on();
-        _tank_led.led_4_turn_on();
-    } else if(ir_code == IR_CODE_C) {
-        _tank_led.led_1_set_state((const uint16_t[]){900, 100}, 2);
-    } else if(ir_code == IR_CODE_UP) {
-        _tank_led.led_1_set_state((const uint16_t[]){100, 900}, 2);
-    } else if(ir_code == IR_CODE_DOWN) {
-        _tank_led.led_2_set_state((const uint16_t[]){100, 900}, 2);
-    } else if(ir_code == IR_CODE_LEFT) {
-        _tank_led.led_3_set_state((const uint16_t[]){100, 900}, 2);
-    } else if(ir_code == IR_CODE_RIGHT) {
-        _tank_led.led_4_set_state((const uint16_t[]){100, 900}, 2);
-    } else if(ir_code == IR_CODE_SELECT) {
-        _tank_led.led_1_turn_off();
-        _tank_led.led_2_turn_off();
-        _tank_led.led_3_turn_off();
-        _tank_led.led_4_turn_off();
-    }
-
 }
 
 void Tank::enable_motors()
@@ -161,62 +115,88 @@ void Tank::enable_motors()
     digitalWrite(_motor_enable_pin, HIGH);
 }
 
-void Tank::_update_motors()
+void Tank::drive(const motor_direction left_direction, const motor_direction right_direction, const uint8_t left_speed, const uint8_t right_speed)
 {
-    _update_motor_directions();
+    _control_motor(_left_motor_state, left_direction, left_speed);
+    _control_motor(_right_motor_state, right_direction, right_speed);
 }
 
-void Tank::_update_motor_directions()
+void Tank::drive_forward(const uint8_t left_speed, const uint8_t right_speed)
 {
-    _update_motor_direction(_left_motor_state);
-    _update_motor_direction(_right_motor_state);
-    _update_motor_direction(_turret_motor_state);
-
-    unsigned char new_motor_control_code = _create_motor_control_code();
-    if (new_motor_control_code != _motor_control_code) {
-        _motor_control_code = new_motor_control_code;
-        _write_motor_control_code(_motor_control_code);
-    }
+    drive(motor_forward, motor_forward, left_speed, right_speed);
 }
 
-void Tank::_update_motor_direction(struct motor_state & motor_state)
+void Tank::drive_reverse(const uint8_t left_speed, const uint8_t right_speed)
 {
-    unsigned long current_millis = millis();
-
-    if (motor_state.direction != motor_state.requested_direction) {
-        if (current_millis > motor_state.direction_change_request_millis + MOTOR_CHANGE_DIRECTION_DELAY_MILLIS) {
-            motor_state.direction = motor_state.requested_direction;
-        }
-    }
+    drive(motor_reverse, motor_reverse, left_speed, right_speed);
 }
 
-unsigned char Tank::_create_motor_control_code()
+void Tank::drive_turn_left(uint8_t left_speed, const uint8_t right_speed)
 {
-    unsigned char control_code = 0;
-
-    if (_turret_motor_state.direction == forward) {
-        control_code |= _motor_control_mapping.turret_left;
-    } else if (_turret_motor_state.direction == reverse) {
-        control_code |= _motor_control_mapping.turret_right;
-    }
-
-    if (_left_motor_state.direction == forward) {
-        control_code |= _motor_control_mapping.left_track_forward;
-    } else if (_left_motor_state.direction == reverse) {
-        control_code |= _motor_control_mapping.left_track_reverse;
-    }
-
-    if (_right_motor_state.direction == forward) {
-        control_code |= _motor_control_mapping.right_track_forward;
-    } else if (_right_motor_state.direction == reverse) {
-        control_code |= _motor_control_mapping.right_track_reverse;
-    }
-
-    return control_code;
+    drive(motor_reverse, motor_forward, left_speed, right_speed);
 }
 
-void Tank::_write_motor_control_code(const unsigned char & control_code)
+void Tank::drive_turn_right(uint8_t left_speed, const uint8_t right_speed)
 {
+    drive(motor_forward, motor_reverse, left_speed, right_speed);
+}
+
+void Tank::drive_stop()
+{
+    _control_motor(_left_motor_state, motor_stop, 0);
+    _control_motor(_right_motor_state, motor_stop, 0);
+}
+
+void Tank::turret_left(const uint8_t speed)
+{
+    _control_motor(_turret_motor_state, motor_reverse, speed);
+}
+
+void Tank::turret_right(const uint8_t speed)
+{
+    _control_motor(_turret_motor_state, motor_forward, speed);
+}
+
+void Tank::turret_stop()
+{
+    _control_motor(_turret_motor_state, motor_stop, 0);
+}
+
+const uint16_t Tank::turret_position()
+{
+    if (!turret_has_been_calibrated()) {
+        return -1;
+    }
+
+    uint16_t turret_position = int(_turret_encoder_count / (TURRET_GEAR_RATIO / 360));
+
+    if (turret_position > 360) {
+        turret_position -= 360;
+    } else if(turret_position < 0) {
+        turret_position += 360;
+    }
+
+    return turret_position;
+}
+
+const short Tank::turret_direction()
+{
+    return _turret_direction;
+}
+
+const bool Tank::turret_has_been_calibrated()
+{
+    return _turret_has_been_calibrated;
+}
+
+const uint8_t Tank::front_distance()
+{
+    return _sonar_front_distance;
+}
+
+const uint8_t Tank::rear_distance()
+{
+    return _sonar_rear_distance;
 }
 
 void Tank::_update_sonar(const unsigned short sonar_pin, volatile unsigned long &sonar_timer, volatile short &sonar_state, void (&interrupt)())
@@ -253,128 +233,160 @@ void Tank::_update_sonar(const unsigned short sonar_pin, volatile unsigned long 
     }
 }
 
-void Tank::drive(const motor_direction left_direction, const motor_direction right_direction, const uint8_t left_speed, const uint8_t right_speed)
+void Tank::_process_ir_code(unsigned long & ir_code)
 {
-    control_left_motor(left_direction, left_speed);
-    control_right_motor(right_direction, right_speed);
+    if (ir_code == IR_CODE_A) {
+        _tank_led.led_1_set_state((const uint16_t[]){500, 500, 500, 500}, 4);
+    } else if(ir_code == IR_CODE_B) {
+        _tank_led.led_1_turn_on();
+        _tank_led.led_2_turn_on();
+        _tank_led.led_3_turn_on();
+        _tank_led.led_4_turn_on();
+    } else if(ir_code == IR_CODE_C) {
+        _tank_led.led_1_set_state((const uint16_t[]){900, 100}, 2);
+    } else if(ir_code == IR_CODE_UP) {
+        _tank_led.led_1_set_state((const uint16_t[]){100, 900}, 2);
+        drive_forward(255, 255);
+    } else if(ir_code == IR_CODE_DOWN) {
+        _tank_led.led_2_set_state((const uint16_t[]){100, 900}, 2);
+        drive_reverse(255, 255);
+    } else if(ir_code == IR_CODE_LEFT) {
+        _tank_led.led_3_set_state((const uint16_t[]){100, 900}, 2);
+    } else if(ir_code == IR_CODE_RIGHT) {
+        _tank_led.led_4_set_state((const uint16_t[]){100, 900}, 2);
+    } else if(ir_code == IR_CODE_SELECT) {
+        drive_stop();
+        _tank_led.led_1_turn_off();
+        _tank_led.led_2_turn_off();
+        _tank_led.led_3_turn_off();
+        _tank_led.led_4_turn_off();
+    }
+
 }
 
-void Tank::drive_forward(const uint8_t left_speed, const uint8_t right_speed)
+void Tank::_update_motors()
 {
-    control_left_motor(forward, left_speed);
-    control_right_motor(forward, right_speed);
+    _update_motor(_left_motor_pwm_pin, _left_motor_state);
+    _update_motor(_right_motor_pwm_pin, _right_motor_state);
+    _update_motor(_turret_motor_pwm_pin, _turret_motor_state);
+
+    unsigned char new_motor_control_code = _create_motor_control_code();
+
+    if (new_motor_control_code != _motor_control_code) {
+        _motor_control_code = new_motor_control_code;
+        _write_motor_control_code(_motor_control_code);
+    }
+
 }
 
-void Tank::drive_reverse(const uint8_t left_speed, const uint8_t right_speed)
+void Tank::_update_motor(const uint8_t motor_pin, motor_state & motor_state)
 {
-    control_left_motor(reverse, left_speed);
-    control_right_motor(reverse, right_speed);
-}
+    if (motor_state.direction != motor_state.requested_direction) {
+        if (motor_state.direction != motor_stop 
+            && millis() < motor_state.direction_change_request_millis + MOTOR_CHANGE_DIRECTION_DELAY_MILLIS) {
+            motor_state.last_speed = 0;
+            digitalWrite(motor_pin, 0);
+            return;
+        } else {
+            motor_state.direction = motor_state.requested_direction;
+        }
+    }
 
-void Tank::drive_stop()
-{
-    control_left_motor(stop);
-    control_right_motor(stop);
-}
-
-void Tank::drive_turn_left(uint8_t left_speed, const uint8_t right_speed)
-{
-    control_left_motor(reverse, left_speed);
-    control_right_motor(forward, right_speed);
-}
-
-void Tank::drive_turn_right(uint8_t left_speed, const uint8_t right_speed)
-{
-    control_left_motor(forward, left_speed);
-    control_right_motor(reverse, right_speed);
-}
-
-void Tank::control_left_motor(const motor_direction direction, const uint8_t speed)
-{
-    _left_motor_state.requested_direction = direction;
-
-    if (direction == stop) {
-        _left_motor_state.direction = stop;
-        _left_motor_state.speed = 0;
-    } else if (_left_motor_state.requested_direction != _left_motor_state.direction) {
-        _left_motor_state.direction_change_request_millis = millis();
+    if (motor_state.speed != motor_state.last_speed) {
+        digitalWrite(motor_pin, motor_state.speed);
+        motor_state.last_speed = motor_state.speed;
     }
 }
 
-void Tank::control_right_motor(const motor_direction direction, const uint8_t speed)
+void Tank::_control_motor(struct motor_state & state, const motor_direction direction, const uint8_t speed)
 {
-    _right_motor_state.requested_direction = direction;
+    state.requested_direction = direction;
+    state.speed = speed;
 
-    if (direction == stop) {
-        _right_motor_state.direction = stop;
-        _right_motor_state.speed = 0;
-    } else if (_right_motor_state.requested_direction != _right_motor_state.direction) {
-        _right_motor_state.direction_change_request_millis = millis();
+    if (direction == motor_stop) {
+        state.direction = motor_stop;
+        state.speed = 0;
+    } else if (state.requested_direction != state.direction) {
+        state.direction_change_request_millis = millis();
     }
 }
 
-void Tank::turret_left(const uint8_t speed)
+unsigned char Tank::_create_motor_control_code()
 {
-    control_turret_motor(reverse, speed);
-}
+    unsigned char control_code = 0;
 
-void Tank::turret_right(const uint8_t speed)
-{
-    control_turret_motor(forward, speed);
-}
-
-void Tank::turret_stop()
-{
-    control_turret_motor(stop);
-}
-
-void Tank::control_turret_motor(const motor_direction direction, const uint8_t speed)
-{
-    _turret_motor_state.requested_direction = direction;
-
-    if (direction == stop) {
-        _turret_motor_state.direction = stop;
-        _turret_motor_state.speed = 0;
-    } else if (_turret_motor_state.requested_direction != _turret_motor_state.direction) {
-        _turret_motor_state.direction_change_request_millis = millis();
-    }
-}
-
-const uint8_t Tank::front_distance()
-{
-    return _sonar_front_distance;
-}
-
-const uint8_t Tank::rear_distance()
-{
-    return _sonar_rear_distance;
-}
-
-const uint16_t Tank::turret_position()
-{
-    if (!turret_has_been_calibrated()) {
-        return -1;
+    if (_left_motor_state.direction == motor_forward) {
+        control_code |= _motor_control_mapping.left_track_forward;
+    } else if (_left_motor_state.direction == motor_reverse) {
+        control_code |= _motor_control_mapping.left_track_reverse;
     }
 
-    uint16_t turret_position = int(_turret_encoder_count / (TURRET_GEAR_RATIO / 360));
-
-    if (turret_position > 360) {
-        turret_position -= 360;
-    } else if(turret_position < 0) {
-        turret_position += 360;
+    if (_right_motor_state.direction == motor_forward) {
+        control_code |= _motor_control_mapping.right_track_forward;
+    } else if (_right_motor_state.direction == motor_reverse) {
+        control_code |= _motor_control_mapping.right_track_reverse;
     }
 
-    return turret_position;
+    if (_turret_motor_state.direction == motor_forward) {
+        control_code |= _motor_control_mapping.turret_left;
+    } else if (_turret_motor_state.direction == motor_reverse) {
+        control_code |= _motor_control_mapping.turret_right;
+    }
+
+    return control_code;
 }
 
-const bool Tank::turret_has_been_calibrated()
+void Tank::_write_motor_control_code(const unsigned char & control_code)
 {
-    return _turret_has_been_calibrated;
+    char write_code = control_code;
+
+    digitalWrite(_motor_enable_pin, LOW);
+    digitalWrite(_shift_clear_pin, LOW);
+    digitalWrite(_shift_clear_pin, HIGH);
+    _shift_bit(0);
+    _shift_bit(0);
+    for (int i = 0; i < 6; ++i) {
+        if (write_code % 2 == 1) {
+            _shift_bit(1);
+        } else {
+            _shift_bit(0);
+        }
+        write_code >>= 1;
+    }
+    digitalWrite(_shift_clock_pin, LOW);
+    digitalWrite(_shift_clock_pin, HIGH);
+    digitalWrite(_motor_enable_pin, HIGH);
 }
 
-const short Tank::turret_direction()
+void Tank::_shift_bit(bool bit)
 {
-    return _turret_direction;
+    digitalWrite(_shift_clock_pin, LOW);
+    if (bit) {
+        digitalWrite(_shift_data_pin, HIGH);
+    } else {
+        digitalWrite(_shift_data_pin, LOW);
+    }
+    digitalWrite(_shift_clock_pin, HIGH);
+}
+
+void Tank::_process_interrupts()
+{
+    if (__turret_calibration_interrupt_flag) {
+        _process_turret_calibration_interrupt();
+        __turret_calibration_interrupt_flag = false;
+    }
+    if (__turret_encoder_interrupt_flag) {
+        _process_turret_encoder_interrupt();
+        __turret_encoder_interrupt_flag = false;
+    }
+    if ( __sonar_front_interrupt_flag) {
+        _process_sonar_front_interrupt();
+        __sonar_front_interrupt_flag = false;
+    }
+    if ( __sonar_rear_interrupt_flag) {
+        _process_sonar_rear_interrupt();
+        __sonar_rear_interrupt_flag = false;
+    }
 }
 
 void Tank::_process_turret_calibration_interrupt()

@@ -7,7 +7,7 @@
 #include "tank_led.h"
 
 // delay between motor changing directions. to reduce strain on motors.
-#define MOTOR_CHANGE_DIRECTION_DELAY_MILLIS 100
+#define MOTOR_CHANGE_DIRECTION_DELAY_MILLIS 1000
 #define MOTOR_DEFAULT_SPEED 255
 // gear ratio determined through expermentation. if an incorrect turret position is being reported, this value could be responsible.
 #define TURRET_GEAR_RATIO 24000
@@ -39,31 +39,32 @@ void front_sonar_interrupt();
 void rear_sonar_interrupt();
 
 enum tank_mode {
-    fight,
-    drive,
-    turret
+    mode_fight,
+    mode_drive,
+    mode_turret
 };
 
 enum motor_direction {
-    forward,
-    reverse,
-    stop
+    motor_forward,
+    motor_reverse,
+    motor_stop
 };
 
 struct motor_state {
     motor_direction direction;
     motor_direction requested_direction;
     uint8_t speed;
+    uint8_t last_speed;
     unsigned long direction_change_request_millis;
 };
 
 struct motor_control_mapping {
-    uint8_t turret_left;
-    uint8_t turret_right;
     uint8_t left_track_reverse;
     uint8_t left_track_forward;
     uint8_t right_track_reverse;
     uint8_t right_track_forward;
+    uint8_t turret_left;
+    uint8_t turret_right;
 };
 
 class Tank
@@ -72,6 +73,9 @@ class Tank
         Tank(
             uint8_t ir_receiver_pin,
             uint8_t motor_enable_pin,
+            uint8_t left_motor_pwm_pin,
+            uint8_t right_motor_pwm_pin,
+            uint8_t turret_motor_pwm_pin,
             uint8_t shift_clear_pin,
             uint8_t shift_clock_pin,
             uint8_t shift_data_pin,
@@ -94,14 +98,11 @@ class Tank
         void drive_reverse(const uint8_t left_speed = MOTOR_DEFAULT_SPEED, const uint8_t right_speed = MOTOR_DEFAULT_SPEED);
         void drive_turn_left(const uint8_t left_speed = MOTOR_DEFAULT_SPEED, const uint8_t right_speed = MOTOR_DEFAULT_SPEED);
         void drive_turn_right(const uint8_t left_speed = MOTOR_DEFAULT_SPEED, const uint8_t right_speed = MOTOR_DEFAULT_SPEED);
-        void control_left_motor(const motor_direction direction, const uint8_t speed = MOTOR_DEFAULT_SPEED);
-        void control_right_motor(const motor_direction direction, const uint8_t speed = MOTOR_DEFAULT_SPEED);
         void drive_stop();
 
         void turret_left(const uint8_t speed = MOTOR_DEFAULT_SPEED);
         void turret_right(const uint8_t speed = MOTOR_DEFAULT_SPEED);
         void turret_stop();
-        void control_turret_motor(const motor_direction direction, const uint8_t speed = MOTOR_DEFAULT_SPEED);
         const uint16_t turret_position();
         const short turret_direction();
         const bool turret_has_been_calibrated();
@@ -110,19 +111,16 @@ class Tank
         const uint8_t rear_distance();
 
     private:
-        void _initialize_motors();
-        void _initalize_turret();
-        void _initialize_ir();
-
         void _update_sonar(unsigned short sonar_pin, volatile unsigned long &sonar_timer, volatile short &sonar_state, void (&interrupt)());
 
         void _process_ir_code(unsigned long & ir_code);
 
         void _update_motors();
-        void _update_motor_directions();
-        void _update_motor_direction(struct motor_state & state);
+        void _update_motor(const uint8_t motor_pin, struct motor_state & state);
+        void _control_motor(struct motor_state & state, const motor_direction direction, const uint8_t speed = MOTOR_DEFAULT_SPEED);
         unsigned char _create_motor_control_code();
         void _write_motor_control_code(const unsigned char & control_code);
+        void _shift_bit(bool bit);
 
         void _process_interrupts();
         void _process_turret_calibration_interrupt();
@@ -139,6 +137,9 @@ class Tank
 
         uint8_t _ir_receiver_pin;
         uint8_t _motor_enable_pin;
+        uint8_t _left_motor_pwm_pin;
+        uint8_t _right_motor_pwm_pin;
+        uint8_t _turret_motor_pwm_pin;
         uint8_t _shift_clear_pin;
         uint8_t _shift_clock_pin;
         uint8_t _shift_data_pin;
@@ -152,8 +153,28 @@ class Tank
         uint8_t _led_pin_4;
 
         struct motor_control_mapping _motor_control_mapping = {32, 16, 8, 4, 2, 1};
-        char _motor_control_code;
-        struct motor_state _left_motor_state, _right_motor_state, _turret_motor_state;
+        char _motor_control_code = 0;
+        struct motor_state _left_motor_state = {
+            .direction = motor_stop,
+            .requested_direction = motor_stop,
+            .speed = 0,
+            .last_speed = 0,
+            .direction_change_request_millis = 0
+        };
+        struct motor_state _right_motor_state = {
+            .direction = motor_stop,
+            .requested_direction = motor_stop,
+            .speed = 0,
+            .last_speed = 0,
+            .direction_change_request_millis = 0
+        };
+        struct motor_state _turret_motor_state = {
+            .direction = motor_stop,
+            .requested_direction = motor_stop,
+            .speed = 0,
+            .last_speed = 0,
+            .direction_change_request_millis = 0
+        };
 
         long           _turret_encoder_count = 0;
         bool           _turret_has_been_calibrated = false;
