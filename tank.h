@@ -22,6 +22,8 @@
 
 // this is related to the speed of sound so should not need to be changed. unless you're operating well above sea level. ha. ha.
 #define SONAR_FACTOR 29.1
+#define SONAR_DISTANCE_WARNING 40
+#define SONAR_DISTANCE_EMERGENCY 20
 
 /* begin global variables */
 // Interupt routines and variables cannot be members of a class
@@ -40,14 +42,21 @@ void rear_sonar_interrupt();
 
 enum tank_mode {
     mode_fight,
-    mode_drive,
-    mode_turret
+    mode_debug_drive,
+    mode_debug_turret,
+    mode_debug_sonar
 };
 
 enum motor_direction {
     motor_forward,
     motor_reverse,
     motor_stop
+};
+
+enum distance_warning {
+    distance_warning_none,
+    distance_warning_warning,
+    distance_warning_emergency
 };
 
 struct motor_state {
@@ -91,7 +100,7 @@ class Tank
 
         void setup();
         void loop();
-        void enable_motors();
+        void enable_motors(bool enable);
 
         void drive(const motor_direction left_direction, const motor_direction right_direction, const uint8_t left_speed = MOTOR_DEFAULT_SPEED, const uint8_t right_speed = MOTOR_DEFAULT_SPEED);
         void drive_forward(const uint8_t left_speed = MOTOR_DEFAULT_SPEED, const uint8_t right_speed = MOTOR_DEFAULT_SPEED);
@@ -176,16 +185,19 @@ class Tank
             .direction_change_request_millis = 0
         };
 
+        bool           _motors_enabled = false;
         long           _turret_encoder_count = 0;
         bool           _turret_has_been_calibrated = false;
         unsigned long  _last_turret_calibration_millis = 0;
         short          _turret_direction = 0;
-        uint8_t        _sonar_front_distance = -1;
+        uint16_t       _sonar_front_distance = -1;
         short          _sonar_front_state = 0;
         unsigned long  _sonar_front_timer = 0;
-        uint8_t        _sonar_rear_distance = -1;
+        uint16_t       _sonar_rear_distance = -1;
         short          _sonar_rear_state = 0;
         unsigned long  _sonar_rear_timer = 0;
+
+        distance_warning _sonar_front_distance_warning = distance_warning_none;
 };
 
 #endif

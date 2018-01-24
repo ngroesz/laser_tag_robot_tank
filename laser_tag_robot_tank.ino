@@ -1,7 +1,5 @@
 #include "tank.h"
 
-#define DISTANCE_WARNING 10
-
 #define SHIFT_CLEAR_PIN 13
 #define SHIFT_CLOCK_PIN 12
 #define SHIFT_DATA_PIN 8
@@ -46,7 +44,7 @@ void setup()
 
     tank.setup();
     Serial.println("Tank initialized.");
-    tank.enable_motors();
+    tank.enable_motors(0);
     randomSeed(analogRead(0));
 }
 
@@ -54,10 +52,10 @@ void loop()
 {
     unsigned long current_millis = millis();
 
-    //if (current_millis > last_update_millis + 5000) {
-    //    int speed = random(0, 155) + 100;
-    //    tank.drive_forward(speed, 0);
-    //    last_update_millis = current_millis;
-    //}
+    if (current_millis > last_update_millis + 5000) {
+        Serial.print("front distance: ");
+        Serial.println(tank.front_distance());
+        last_update_millis = current_millis;
+    }
     tank.loop();
 }
