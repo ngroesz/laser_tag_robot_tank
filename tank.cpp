@@ -62,12 +62,13 @@ Tank::Tank(
     _shift_data_pin         = shift_data_pin;
     _turret_encoder_pin     = turret_encoder_pin;
     _turret_calibration_pin = turret_calibration_pin;
-    _sonar_pin_front        = sonar_pin_front;
-    _sonar_pin_rear         = sonar_pin_rear;
+    _front_sonar_state.pin  = sonar_pin_front;
+    _rear_sonar_state.pin   = sonar_pin_rear;
     _led_pin_1              = led_pin_1;
     _led_pin_2              = led_pin_2;
     _led_pin_3              = led_pin_3;
     _led_pin_4              = led_pin_4;
+
 }
 
 void Tank::setup()
@@ -81,6 +82,9 @@ void Tank::setup()
     pinMode(_shift_clock_pin, OUTPUT);
     pinMode(_shift_data_pin, OUTPUT);
     _write_motor_control_code(0);
+
+    // initalize turret
+    attachPCINT(digitalPinToPCINT(_front_sonar_state.pin), sonar_front_interrupt, FALLING);
 
     // initialize turret
     pinMode(_turret_encoder_pin, INPUT_PULLUP);
@@ -107,8 +111,8 @@ void Tank::loop()
     _process_interrupts();
     _update_motors();
     _tank_led.loop();
-    _update_sonar(_sonar_pin_front, _sonar_front_timer, _sonar_front_state, sonar_front_interrupt);
-    _update_sonar(_sonar_pin_rear, _sonar_rear_timer, _sonar_rear_state, sonar_rear_interrupt);
+    _update_sonar(_front_sonar_state, sonar_front_interrupt);
+    //_update_sonar(_sonar_pin_rear, _sonar_rear_timer, _sonar_rear_state, sonar_rear_interrupt);
 }
 
 void Tank::enable_motors(bool enable)
@@ -197,67 +201,63 @@ const bool Tank::turret_has_been_calibrated()
 
 const uint8_t Tank::front_distance()
 {
-    return _sonar_front_distance;
+    return _front_sonar_state.distance;
 }
 
 const uint8_t Tank::rear_distance()
 {
-    return _sonar_rear_distance;
+    return _rear_sonar_state.distance;
 }
 
-void Tank::_update_sonar(const unsigned short sonar_pin, volatile unsigned long &sonar_timer, volatile short &sonar_state, void (&interrupt)())
+void Tank::_update_sonar(struct sonar_state & sonar, void (&interrupt)())
 {
-    switch(sonar_state) {
+    switch(sonar.state) {
         case 1: // state ready
             // initialize sonar, send pulse, and set interrupt for return
-            pinMode(sonar_pin, OUTPUT);
+            pinMode(sonar.pin, OUTPUT);
             // these signals are required to tell the sonar device to send
             // normally we try to avoid delaying in our program
             // but these delays are so brief that it should be okay
-            digitalWrite(sonar_pin, LOW);
+            digitalWrite(sonar.pin, LOW);
             delayMicroseconds(2);
-            digitalWrite(sonar_pin, HIGH);
+            digitalWrite(sonar.pin, HIGH);
             delayMicroseconds(10);
-            digitalWrite(sonar_pin, LOW);
-            pinMode(sonar_pin, INPUT);
-            sonar_state = 2;
-            sonar_timer = micros();
-            attachPCINT(digitalPinToPCINT(sonar_pin), interrupt, CHANGE);
+            digitalWrite(sonar.pin, LOW);
+            pinMode(sonar.pin, INPUT);
+            sonar.state = 2;
+            sonar.timer = micros();
+            enablePCINT(digitalPinToPCINT(sonar.pin));
             break;
         case 2: // state wait
             // wait for sonar return (handled by interrupt)
             break;
         case 3: // state delay
+            disablePCINT(digitalPinToPCINT(sonar.pin));
             // if sonar has returned a pulse and the delay between readings is over, set to ready state
-            if (micros() >= sonar_timer + SONAR_DELAY_MICROS) {
-                sonar_state = 1;
+            if (micros() >= sonar.timer + SONAR_DELAY_MICROS) {
+                sonar.state = 1;
             }
             break;
         default:
             // if undefined, set to ready state
-            sonar_state = 1;
+            sonar.state = 1;
     }
 
     if (_tank_mode == mode_debug_sonar) {
-        if (_sonar_front_distance <= SONAR_DISTANCE_EMERGENCY) {
-            if (_sonar_front_distance_warning != distance_warning_emergency) {
-                _tank_led.led_3_set_state((const uint16_t[]){500, 500}, 2);
-                _tank_led.led_4_set_state((const uint16_t[]){500, 500}, 2);
-                _sonar_front_distance_warning = distance_warning_emergency;
+        if (sonar.distance <= SONAR_DISTANCE_EMERGENCY) {
+            if (sonar.warning != distance_warning_emergency) {
+                _tank_led.led_3_set_state((const uint16_t[]){250, 250}, 2);
+                sonar.warning = distance_warning_emergency;
             }
-        } else if (_sonar_front_distance <= SONAR_DISTANCE_WARNING) {
-            Serial.println("hwy");
-            if (_sonar_front_distance_warning != distance_warning_warning) {
-                _tank_led.led_3_set_state((const uint16_t[]){1000, 500}, 2);
-                _sonar_front_distance_warning = distance_warning_warning;
+        } else if (sonar.distance <= SONAR_DISTANCE_WARNING) {
+            if (sonar.warning != distance_warning_warning) {
+                _tank_led.led_3_set_state((const uint16_t[]){1000, 1000}, 2);
+                sonar.warning = distance_warning_warning;
             }
         } else {
-            Serial.print("herE: ");
-            Serial.println(_sonar_front_distance);
-            if (_sonar_front_distance_warning != distance_warning_none) {
+            if (sonar.warning != distance_warning_none) {
                 _tank_led.led_3_turn_off();
-                _tank_led.led_4_turn_off();
-                _sonar_front_distance_warning = distance_warning_none;
+                sonar.warning = distance_warning_none;
             }
         }
     }
@@ -428,14 +428,14 @@ void Tank::_process_interrupts()
     }
 
     if ( __sonar_front_interrupt_flag) {
-        _process_sonar_front_interrupt();
+        _process_sonar_interrupt(_front_sonar_state);
         __sonar_front_interrupt_flag = false;
     }
 
-    if ( __sonar_rear_interrupt_flag) {
-        _process_sonar_rear_interrupt();
-        __sonar_rear_interrupt_flag = false;
-    }
+    //if ( __sonar_rear_interrupt_flag) {
+    //    _process_sonar_rear_interrupt();
+    //    __sonar_rear_interrupt_flag = false;
+    //}
 }
 
 void Tank::_process_turret_calibration_interrupt()
@@ -455,16 +455,26 @@ void Tank::_process_turret_encoder_interrupt()
     _turret_encoder_count += _turret_direction;
 }
 
-void Tank::_process_sonar_front_interrupt()
+void Tank::_process_sonar_interrupt(struct sonar_state & sonar)
 {
-    _sonar_front_distance = uint16_t(((micros() - _sonar_front_timer) / 2) / SONAR_FACTOR);
-    _sonar_front_timer = micros();
-    _sonar_front_state = 3;
+    uint8_t calculated_distance = int(((micros() - sonar.timer) / 2) / SONAR_FACTOR);
+
+    if (calculated_distance > 0) {
+        sonar.distance = calculated_distance;
+    }
+
+    sonar.timer = micros();
+    sonar.state = 3;
 }
 
-void Tank::_process_sonar_rear_interrupt()
-{
-    _sonar_rear_distance = uint16_t(((micros() - _sonar_rear_timer) / 2) / SONAR_FACTOR);
-    _sonar_rear_timer = micros();
-    _sonar_rear_state = 3;
-}
+//void Tank::_process_sonar_rear_interrupt()
+//{
+//    uint8_t calculated_distance = int(((micros() - _sonar_rear_timer) / 2) / SONAR_FACTOR);
+//
+//    if (calculated_distance > 0) {
+//        _sonar_rear_distance = calculated_distance;
+//    }
+//
+//    _sonar_rear_timer = micros();
+//    _sonar_rear_state = 3;
+//}

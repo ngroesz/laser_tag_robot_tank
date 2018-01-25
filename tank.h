@@ -59,6 +59,14 @@ enum distance_warning {
     distance_warning_emergency
 };
 
+struct sonar_state {
+    uint8_t pin;
+    uint8_t state;
+    unsigned long timer;
+    uint8_t distance;
+    distance_warning warning;
+};
+
 struct motor_state {
     motor_direction direction;
     motor_direction requested_direction;
@@ -120,7 +128,7 @@ class Tank
         const uint8_t rear_distance();
 
     private:
-        void _update_sonar(unsigned short sonar_pin, volatile unsigned long &sonar_timer, volatile short &sonar_state, void (&interrupt)());
+        void _update_sonar(struct sonar_state & state, void (&interrupt)());
 
         void _process_ir_code(unsigned long & ir_code);
 
@@ -134,8 +142,8 @@ class Tank
         void _process_interrupts();
         void _process_turret_calibration_interrupt();
         void _process_turret_encoder_interrupt();
-        void _process_sonar_front_interrupt();
-        void _process_sonar_rear_interrupt();
+        void _process_sonar_interrupt(struct sonar_state & sonar);
+        //void _process_sonar_rear_interrupt();
 
         IRrecv *irrecv;
         decode_results results;
@@ -154,13 +162,13 @@ class Tank
         uint8_t _shift_data_pin;
         uint8_t _turret_encoder_pin;
         uint8_t _turret_calibration_pin;
-        uint8_t _sonar_pin_front;
-        uint8_t _sonar_pin_rear;
         uint8_t _led_pin_1;
         uint8_t _led_pin_2;
         uint8_t _led_pin_3;
         uint8_t _led_pin_4;
 
+        struct sonar_state _front_sonar_state, _rear_sonar_state;
+            
         struct motor_control_mapping _motor_control_mapping = {32, 16, 8, 4, 2, 1};
         char _motor_control_code = 0;
         struct motor_state _left_motor_state = {
@@ -190,14 +198,6 @@ class Tank
         bool           _turret_has_been_calibrated = false;
         unsigned long  _last_turret_calibration_millis = 0;
         short          _turret_direction = 0;
-        uint16_t       _sonar_front_distance = -1;
-        short          _sonar_front_state = 0;
-        unsigned long  _sonar_front_timer = 0;
-        uint16_t       _sonar_rear_distance = -1;
-        short          _sonar_rear_state = 0;
-        unsigned long  _sonar_rear_timer = 0;
-
-        distance_warning _sonar_front_distance_warning = distance_warning_none;
 };
 
 #endif
