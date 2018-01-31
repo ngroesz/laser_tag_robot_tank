@@ -85,6 +85,9 @@ void Tank::setup()
 
     // initalize turret
     attachPCINT(digitalPinToPCINT(_front_sonar_state.pin), sonar_front_interrupt, FALLING);
+    _front_sonar_state.debug_led_index = 2;
+    attachPCINT(digitalPinToPCINT(_rear_sonar_state.pin), sonar_rear_interrupt, FALLING);
+    _rear_sonar_state.debug_led_index = 3;
 
     // initialize turret
     pinMode(_turret_encoder_pin, INPUT_PULLUP);
@@ -97,8 +100,10 @@ void Tank::setup()
     irrecv->enableIRIn();
 
     // initialize LEDs
-    _tank_led.setup(_led_pin_1, _led_pin_2, _led_pin_3, _led_pin_4);
-    _tank_led.led_1_set_state((const uint16_t[]){500, 500, 500, 500}, 4);
+    uint8_t pins[] = {_led_pin_1, _led_pin_2, _led_pin_3, _led_pin_4};
+    _tank_led.setup(pins);
+
+    _tank_led.led_set_state(0, (const uint16_t[]){500, 500, 500, 500}, 4);
 }
 
 void Tank::loop()
@@ -110,9 +115,10 @@ void Tank::loop()
 
     _process_interrupts();
     _update_motors();
-    _tank_led.loop();
     _update_sonar(_front_sonar_state, sonar_front_interrupt);
-    //_update_sonar(_sonar_pin_rear, _sonar_rear_timer, _sonar_rear_state, sonar_rear_interrupt);
+    _update_sonar(_rear_sonar_state, sonar_rear_interrupt);
+
+    _tank_led.loop();
 }
 
 void Tank::enable_motors(bool enable)
@@ -246,17 +252,17 @@ void Tank::_update_sonar(struct sonar_state & sonar, void (&interrupt)())
     if (_tank_mode == mode_debug_sonar) {
         if (sonar.distance <= SONAR_DISTANCE_EMERGENCY) {
             if (sonar.warning != distance_warning_emergency) {
-                _tank_led.led_3_set_state((const uint16_t[]){250, 250}, 2);
+                _tank_led.led_set_state(sonar.debug_led_index, (const uint16_t[]){250, 250}, 2);
                 sonar.warning = distance_warning_emergency;
             }
         } else if (sonar.distance <= SONAR_DISTANCE_WARNING) {
             if (sonar.warning != distance_warning_warning) {
-                _tank_led.led_3_set_state((const uint16_t[]){1000, 1000}, 2);
+                _tank_led.led_set_state(sonar.debug_led_index, (const uint16_t[]){1000, 1000}, 2);
                 sonar.warning = distance_warning_warning;
             }
         } else {
             if (sonar.warning != distance_warning_none) {
-                _tank_led.led_3_turn_off();
+                _tank_led.led_turn_off(sonar.debug_led_index);
                 sonar.warning = distance_warning_none;
             }
         }
@@ -267,38 +273,42 @@ void Tank::_process_ir_code(unsigned long & ir_code)
 {
     if (ir_code == IR_CODE_A) {
         _tank_mode = mode_fight;
-        _tank_led.led_1_turn_off();
-        _tank_led.led_2_turn_off();
-        _tank_led.led_4_turn_off();
+        _tank_led.led_turn_off(0);
+        _tank_led.led_turn_off(1);
+        _tank_led.led_turn_off(3);
     } else if(ir_code == IR_CODE_B) {
-        _tank_led.led_1_turn_on();
-        _tank_led.led_4_turn_off();
+        _tank_led.led_turn_on(0);
         if (_tank_mode == mode_debug_drive) {
             _tank_mode = mode_debug_turret;
-            _tank_led.led_2_set_state((const uint16_t[]){500, 500, 500, 2000}, 4);
+            _tank_led.led_set_state(1, (const uint16_t[]){500, 500, 500, 2000}, 4);
         } else if (_tank_mode == mode_debug_turret) {
             _tank_mode = mode_debug_sonar;
-            _tank_led.led_2_set_state((const uint16_t[]){500, 500, 500, 500, 500, 2000}, 6);
+            _tank_led.led_set_state(1, (const uint16_t[]){500, 500, 500, 500, 500, 2000}, 6);
         } else {
             _tank_mode = mode_debug_drive;
-            _tank_led.led_2_set_state((const uint16_t[]){500, 2000}, 2);
+            _tank_led.led_set_state(1, (const uint16_t[]){500, 2000}, 2);
         }
     } else if(ir_code == IR_CODE_C) {
-        _tank_led.led_1_set_state((const uint16_t[]){900, 100}, 2);
     } else if(ir_code == IR_CODE_UP) {
-        _tank_led.led_1_set_state((const uint16_t[]){100, 900}, 2);
-        drive_forward(255, 255);
+        if (_tank_mode == mode_debug_drive) {
+            drive_forward();
+        }
     } else if(ir_code == IR_CODE_DOWN) {
-        _tank_led.led_2_set_state((const uint16_t[]){100, 900}, 2);
-        drive_reverse(255, 255);
+        if (_tank_mode == mode_debug_drive) {
+            drive_reverse();
+        }
     } else if(ir_code == IR_CODE_LEFT) {
+        if (_tank_mode == mode_debug_drive) {
+            drive_turn_left();
+        }
     } else if(ir_code == IR_CODE_RIGHT) {
-        _tank_led.led_4_set_state((const uint16_t[]){100, 900}, 2);
+        if (_tank_mode == mode_debug_drive) {
+            drive_turn_right();
+        }
     } else if(ir_code == IR_CODE_SELECT) {
-        drive_stop();
-        _tank_led.led_1_turn_off();
-        _tank_led.led_2_turn_off();
-        _tank_led.led_4_turn_off();
+        if (_tank_mode == mode_debug_drive) {
+            drive_stop();
+        }
     }
 
 }
@@ -380,6 +390,8 @@ unsigned char Tank::_create_motor_control_code()
 
 void Tank::_write_motor_control_code(const unsigned char & control_code)
 {
+    _update_motor_debug_leds();
+
     if (!_motors_enabled) {
         return;
     }
@@ -415,6 +427,27 @@ void Tank::_shift_bit(bool bit)
     digitalWrite(_shift_clock_pin, HIGH);
 }
 
+void Tank::_update_motor_debug_leds()
+{
+    if (_tank_mode == mode_debug_drive) {
+        if (_left_motor_state.direction == motor_forward) {
+            _tank_led.led_turn_on(2);
+        } else if (_left_motor_state.direction == motor_reverse) {
+            _tank_led.led_set_state(2, (const uint16_t[]){500, 500}, 2);
+        } else {
+            _tank_led.led_turn_off(2);
+        }
+
+        if (_right_motor_state.direction == motor_forward) {
+            _tank_led.led_turn_on(3);
+        } else if (_right_motor_state.direction == motor_reverse) {
+            _tank_led.led_set_state(3, (const uint16_t[]){500, 500}, 2);
+        } else {
+            _tank_led.led_turn_off(3);
+        }
+    }
+}
+
 void Tank::_process_interrupts()
 {
     if (__turret_calibration_interrupt_flag) {
@@ -432,10 +465,10 @@ void Tank::_process_interrupts()
         __sonar_front_interrupt_flag = false;
     }
 
-    //if ( __sonar_rear_interrupt_flag) {
-    //    _process_sonar_rear_interrupt();
-    //    __sonar_rear_interrupt_flag = false;
-    //}
+    if ( __sonar_rear_interrupt_flag) {
+        _process_sonar_interrupt(_rear_sonar_state);
+        __sonar_rear_interrupt_flag = false;
+    }
 }
 
 void Tank::_process_turret_calibration_interrupt()
@@ -466,15 +499,3 @@ void Tank::_process_sonar_interrupt(struct sonar_state & sonar)
     sonar.timer = micros();
     sonar.state = 3;
 }
-
-//void Tank::_process_sonar_rear_interrupt()
-//{
-//    uint8_t calculated_distance = int(((micros() - _sonar_rear_timer) / 2) / SONAR_FACTOR);
-//
-//    if (calculated_distance > 0) {
-//        _sonar_rear_distance = calculated_distance;
-//    }
-//
-//    _sonar_rear_timer = micros();
-//    _sonar_rear_state = 3;
-//}

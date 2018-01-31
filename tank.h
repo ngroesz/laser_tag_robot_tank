@@ -8,7 +8,7 @@
 
 // delay between motor changing directions. to reduce strain on motors.
 #define MOTOR_CHANGE_DIRECTION_DELAY_MILLIS 1000
-#define MOTOR_DEFAULT_SPEED 255
+#define MOTOR_DEFAULT_SPEED 100
 // gear ratio determined through expermentation. if an incorrect turret position is being reported, this value could be responsible.
 #define TURRET_GEAR_RATIO 24000
 // this calibration delay is so that the calibration is not triggered multiple times. probably safe to change.
@@ -18,7 +18,7 @@
 // too short would mean that the sonar does not have enough time to return a reading before it is sending another pulse
 // too long would mean that the tank is running into objects before they can be registered
 // note that this is in microseconds, not milliseconds
-#define SONAR_DELAY_MICROS 100000
+#define SONAR_DELAY_MICROS 50000
 
 // this is related to the speed of sound so should not need to be changed. unless you're operating well above sea level. ha. ha.
 #define SONAR_FACTOR 29.1
@@ -64,6 +64,7 @@ struct sonar_state {
     uint8_t state;
     unsigned long timer;
     uint8_t distance;
+    uint8_t debug_led_index;
     distance_warning warning;
 };
 
@@ -138,12 +139,12 @@ class Tank
         unsigned char _create_motor_control_code();
         void _write_motor_control_code(const unsigned char & control_code);
         void _shift_bit(bool bit);
+        void _update_motor_debug_leds();
 
         void _process_interrupts();
         void _process_turret_calibration_interrupt();
         void _process_turret_encoder_interrupt();
         void _process_sonar_interrupt(struct sonar_state & sonar);
-        //void _process_sonar_rear_interrupt();
 
         IRrecv *irrecv;
         decode_results results;
@@ -167,8 +168,9 @@ class Tank
         uint8_t _led_pin_3;
         uint8_t _led_pin_4;
 
-        struct sonar_state _front_sonar_state, _rear_sonar_state;
-            
+        struct sonar_state _front_sonar_state;
+        struct sonar_state _rear_sonar_state;
+
         struct motor_control_mapping _motor_control_mapping = {32, 16, 8, 4, 2, 1};
         char _motor_control_code = 0;
         struct motor_state _left_motor_state = {
