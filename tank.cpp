@@ -83,7 +83,7 @@ void Tank::setup()
     pinMode(_shift_data_pin, OUTPUT);
     _write_motor_control_code(0);
 
-    // initalize turret
+    // initalize sonar
     attachPCINT(digitalPinToPCINT(_front_sonar_state.pin), sonar_front_interrupt, FALLING);
     _front_sonar_state.debug_led_index = 2;
     attachPCINT(digitalPinToPCINT(_rear_sonar_state.pin), sonar_rear_interrupt, FALLING);
@@ -119,6 +119,17 @@ void Tank::loop()
     _update_sonar(_rear_sonar_state, sonar_rear_interrupt);
 
     _tank_led.loop();
+    //Serial.println("motors off");
+    //_motors_enabled = 1;
+    //analogWrite(_left_motor_pwm_pin, 0);
+    //analogWrite(_right_motor_pwm_pin, 0);
+    //_write_motor_control_code(0);
+    //delay(1000);
+    //Serial.println("motors on");
+    //analogWrite(_left_motor_pwm_pin, 100);
+    //analogWrite(_right_motor_pwm_pin, 100);
+    //_write_motor_control_code(40);
+    //delay(1000);
 }
 
 void Tank::enable_motors(bool enable)
@@ -299,11 +310,29 @@ void Tank::_process_ir_code(unsigned long & ir_code)
         }
     } else if(ir_code == IR_CODE_LEFT) {
         if (_tank_mode == mode_debug_drive) {
-            drive_turn_left();
+            if (_left_motor_state.requested_speed >= 10) {
+                _left_motor_state.requested_speed -= 10;
+            } else {
+                _left_motor_state.requested_speed = 0;
+            }
+            if (_right_motor_state.requested_speed >= 10) {
+                _right_motor_state.requested_speed -= 10;
+            } else {
+                _right_motor_state.requested_speed = 0;
+            }
         }
     } else if(ir_code == IR_CODE_RIGHT) {
         if (_tank_mode == mode_debug_drive) {
-            drive_turn_right();
+            if (_left_motor_state.requested_speed <= 245) {
+                _left_motor_state.requested_speed += 10;
+            } else {
+                _left_motor_state.requested_speed = 255;
+            }
+            if (_right_motor_state.requested_speed <= 245) {
+                _right_motor_state.requested_speed += 10;
+            } else {
+                _right_motor_state.requested_speed = 255;
+            }
         }
     } else if(ir_code == IR_CODE_SELECT) {
         if (_tank_mode == mode_debug_drive) {
@@ -330,22 +359,28 @@ void Tank::_update_motors()
 
 void Tank::_update_motor(const uint8_t motor_pin, motor_state & motor_state)
 {
+    unsigned long current_millis = millis();
     if (motor_state.direction != motor_state.requested_direction) {
         // here we check if the motor is recently switching directions
         // and, if so, we just write zero to the speed-control pin
         // and skip the rest of the function
         if (motor_state.direction != motor_stop
-            && millis() < motor_state.direction_change_request_millis + MOTOR_CHANGE_DIRECTION_DELAY_MILLIS) {
+            && current_millis < motor_state.direction_change_request_millis + MOTOR_CHANGE_DIRECTION_DELAY_MILLIS) {
             motor_state.last_speed = 0;
-            digitalWrite(motor_pin, 0);
+            analogWrite(motor_pin, 0);
             return;
         } else {
             motor_state.direction = motor_state.requested_direction;
         }
     }
 
+    if (motor_state.speed != motor_state.requested_speed && current_millis > motor_state.speed_change_millis + MOTOR_SPEED_CHANGE_DELAY_MILLIS) {
+        motor_state.speed += motor_state.speed < motor_state.requested_speed ? 1 : -1;
+        motor_state.speed_change_millis = current_millis;
+    }
+
     if (motor_state.speed != motor_state.last_speed) {
-        digitalWrite(motor_pin, motor_state.speed);
+        analogWrite(motor_pin, motor_state.speed);
         motor_state.last_speed = motor_state.speed;
     }
 }
@@ -353,11 +388,11 @@ void Tank::_update_motor(const uint8_t motor_pin, motor_state & motor_state)
 void Tank::_control_motor(struct motor_state & state, const motor_direction direction, const uint8_t speed)
 {
     state.requested_direction = direction;
-    state.speed = speed;
+    state.requested_speed = speed;
 
     if (direction == motor_stop) {
         state.direction = motor_stop;
-        state.speed = 0;
+        state.requested_speed = 0;
     } else if (state.requested_direction != state.direction) {
         state.direction_change_request_millis = millis();
     }

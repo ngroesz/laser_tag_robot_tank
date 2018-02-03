@@ -8,7 +8,8 @@
 
 // delay between motor changing directions. to reduce strain on motors.
 #define MOTOR_CHANGE_DIRECTION_DELAY_MILLIS 1000
-#define MOTOR_DEFAULT_SPEED 100
+#define MOTOR_SPEED_CHANGE_DELAY_MILLIS 10
+#define MOTOR_DEFAULT_SPEED 200
 // gear ratio determined through expermentation. if an incorrect turret position is being reported, this value could be responsible.
 #define TURRET_GEAR_RATIO 24000
 // this calibration delay is so that the calibration is not triggered multiple times. probably safe to change.
@@ -72,7 +73,9 @@ struct motor_state {
     motor_direction direction;
     motor_direction requested_direction;
     uint8_t speed;
+    uint8_t requested_speed;
     uint8_t last_speed;
+    unsigned long speed_change_millis;
     unsigned long direction_change_request_millis;
 };
 
@@ -177,21 +180,27 @@ class Tank
             .direction = motor_stop,
             .requested_direction = motor_stop,
             .speed = 0,
+            .requested_speed = 0,
             .last_speed = 0,
+            .speed_change_millis = 0,
             .direction_change_request_millis = 0
         };
         struct motor_state _right_motor_state = {
             .direction = motor_stop,
             .requested_direction = motor_stop,
             .speed = 0,
+            .requested_speed = 0,
             .last_speed = 0,
+            .speed_change_millis = 0,
             .direction_change_request_millis = 0
         };
         struct motor_state _turret_motor_state = {
             .direction = motor_stop,
             .requested_direction = motor_stop,
             .speed = 0,
+            .requested_speed = 0,
             .last_speed = 0,
+            .speed_change_millis = 0,
             .direction_change_request_millis = 0
         };
 
