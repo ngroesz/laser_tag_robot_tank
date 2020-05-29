@@ -15,58 +15,26 @@
 // this calibration delay is so that the calibration is not triggered multiple times. probably safe to change.
 #define TURRET_CALIBRATION_DELAY_MILLIS 2000
 
-// delay between sonar pulses, front and rear. safe to change but don't make it too short or too long
-// too short would mean that the sonar does not have enough time to return a reading before it is sending another pulse
-// too long would mean that the tank is running into objects before they can be registered
-// note that this is in microseconds, not milliseconds
-#define SONAR_DELAY_MICROS 50000
-
-// this is related to the speed of sound so should not need to be changed. unless you're operating well above sea level. ha. ha.
-#define SONAR_FACTOR 29.1
-#define SONAR_DISTANCE_WARNING 40
-#define SONAR_DISTANCE_EMERGENCY 20
-
 /* begin global variables */
 // Interupt routines and variables cannot be members of a class
 // So these are declared outside of Tank
 extern volatile bool __turret_calibration_interrupt_flag;
 extern volatile bool __turret_encoder_interrupt_flag;
-extern volatile bool __sonar_front_interrupt_flag;
-extern volatile bool __sonar_rear_interrupt_flag;
 /* end global variables */
 
 void turret_calibration_interrupt();
 void turret_encoder_interrupt();
 
-void front_sonar_interrupt();
-void rear_sonar_interrupt();
-
 enum tank_mode {
     mode_fight,
     mode_debug_drive,
-    mode_debug_turret,
-    mode_debug_sonar
+    mode_debug_turret
 };
 
 enum motor_direction {
     motor_forward,
     motor_reverse,
     motor_stop
-};
-
-enum distance_warning {
-    distance_warning_none,
-    distance_warning_warning,
-    distance_warning_emergency
-};
-
-struct sonar_state {
-    uint8_t pin;
-    uint8_t state;
-    unsigned long timer;
-    uint8_t distance;
-    uint8_t debug_led_index;
-    distance_warning warning;
 };
 
 struct motor_state {
@@ -102,8 +70,6 @@ class Tank
             uint8_t shift_data_pin,
             uint8_t turret_encoder_pin,
             uint8_t turret_calibration_pin,
-            uint8_t sonar_pin_front,
-            uint8_t sonar_pin_rear,
             uint8_t led_pin_1,
             uint8_t led_pin_2,
             uint8_t led_pin_3,
@@ -128,12 +94,7 @@ class Tank
         const short turret_direction();
         const bool turret_has_been_calibrated();
 
-        const uint8_t front_distance();
-        const uint8_t rear_distance();
-
     private:
-        void _update_sonar(struct sonar_state & state, void (&interrupt)());
-
         void _process_ir_code(unsigned long & ir_code);
 
         void _update_motors();
@@ -147,7 +108,6 @@ class Tank
         void _process_interrupts();
         void _process_turret_calibration_interrupt();
         void _process_turret_encoder_interrupt();
-        void _process_sonar_interrupt(struct sonar_state & sonar);
 
         IRrecv *irrecv;
         decode_results results;
@@ -170,9 +130,6 @@ class Tank
         uint8_t _led_pin_2;
         uint8_t _led_pin_3;
         uint8_t _led_pin_4;
-
-        struct sonar_state _front_sonar_state;
-        struct sonar_state _rear_sonar_state;
 
         struct motor_control_mapping _motor_control_mapping = {32, 16, 8, 4, 2, 1};
         char _motor_control_code = 0;

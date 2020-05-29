@@ -44,8 +44,6 @@ Tank::Tank(
     uint8_t shift_data_pin,
     uint8_t turret_encoder_pin,
     uint8_t turret_calibration_pin,
-    uint8_t sonar_pin_front,
-    uint8_t sonar_pin_rear,
     uint8_t led_pin_1,
     uint8_t led_pin_2,
     uint8_t led_pin_3,
@@ -62,8 +60,6 @@ Tank::Tank(
     _shift_data_pin         = shift_data_pin;
     _turret_encoder_pin     = turret_encoder_pin;
     _turret_calibration_pin = turret_calibration_pin;
-    _front_sonar_state.pin  = sonar_pin_front;
-    _rear_sonar_state.pin   = sonar_pin_rear;
     _led_pin_1              = led_pin_1;
     _led_pin_2              = led_pin_2;
     _led_pin_3              = led_pin_3;
@@ -82,12 +78,6 @@ void Tank::setup()
     pinMode(_shift_clock_pin, OUTPUT);
     pinMode(_shift_data_pin, OUTPUT);
     _write_motor_control_code(0);
-
-    // initalize sonar
-    attachPCINT(digitalPinToPCINT(_front_sonar_state.pin), sonar_front_interrupt, FALLING);
-    _front_sonar_state.debug_led_index = 2;
-    attachPCINT(digitalPinToPCINT(_rear_sonar_state.pin), sonar_rear_interrupt, FALLING);
-    _rear_sonar_state.debug_led_index = 3;
 
     // initialize turret
     pinMode(_turret_encoder_pin, INPUT_PULLUP);
@@ -115,21 +105,19 @@ void Tank::loop()
 
     _process_interrupts();
     _update_motors();
-    _update_sonar(_front_sonar_state, sonar_front_interrupt);
-    _update_sonar(_rear_sonar_state, sonar_rear_interrupt);
 
     _tank_led.loop();
-    //Serial.println("motors off");
-    //_motors_enabled = 1;
-    //analogWrite(_left_motor_pwm_pin, 0);
-    //analogWrite(_right_motor_pwm_pin, 0);
-    //_write_motor_control_code(0);
-    //delay(1000);
-    //Serial.println("motors on");
-    //analogWrite(_left_motor_pwm_pin, 100);
-    //analogWrite(_right_motor_pwm_pin, 100);
-    //_write_motor_control_code(40);
-    //delay(1000);
+    Serial.println("motors off");
+    _motors_enabled = 1;
+    analogWrite(_left_motor_pwm_pin, 0);
+    analogWrite(_right_motor_pwm_pin, 0);
+    _write_motor_control_code(0);
+    delay(1000);
+    Serial.println("motors on");
+    analogWrite(_left_motor_pwm_pin, 100);
+    analogWrite(_right_motor_pwm_pin, 100);
+    _write_motor_control_code(40);
+    delay(1000);
 }
 
 void Tank::enable_motors(bool enable)
@@ -216,70 +204,6 @@ const bool Tank::turret_has_been_calibrated()
     return _turret_has_been_calibrated;
 }
 
-const uint8_t Tank::front_distance()
-{
-    return _front_sonar_state.distance;
-}
-
-const uint8_t Tank::rear_distance()
-{
-    return _rear_sonar_state.distance;
-}
-
-void Tank::_update_sonar(struct sonar_state & sonar, void (&interrupt)())
-{
-    switch(sonar.state) {
-        case 1: // state ready
-            // initialize sonar, send pulse, and set interrupt for return
-            pinMode(sonar.pin, OUTPUT);
-            // these signals are required to tell the sonar device to send
-            // normally we try to avoid delaying in our program
-            // but these delays are so brief that it should be okay
-            digitalWrite(sonar.pin, LOW);
-            delayMicroseconds(2);
-            digitalWrite(sonar.pin, HIGH);
-            delayMicroseconds(10);
-            digitalWrite(sonar.pin, LOW);
-            pinMode(sonar.pin, INPUT);
-            sonar.state = 2;
-            sonar.timer = micros();
-            enablePCINT(digitalPinToPCINT(sonar.pin));
-            break;
-        case 2: // state wait
-            // wait for sonar return (handled by interrupt)
-            break;
-        case 3: // state delay
-            disablePCINT(digitalPinToPCINT(sonar.pin));
-            // if sonar has returned a pulse and the delay between readings is over, set to ready state
-            if (micros() >= sonar.timer + SONAR_DELAY_MICROS) {
-                sonar.state = 1;
-            }
-            break;
-        default:
-            // if undefined, set to ready state
-            sonar.state = 1;
-    }
-
-    if (_tank_mode == mode_debug_sonar) {
-        if (sonar.distance <= SONAR_DISTANCE_EMERGENCY) {
-            if (sonar.warning != distance_warning_emergency) {
-                _tank_led.led_set_state(sonar.debug_led_index, (const uint16_t[]){250, 250}, 2);
-                sonar.warning = distance_warning_emergency;
-            }
-        } else if (sonar.distance <= SONAR_DISTANCE_WARNING) {
-            if (sonar.warning != distance_warning_warning) {
-                _tank_led.led_set_state(sonar.debug_led_index, (const uint16_t[]){1000, 1000}, 2);
-                sonar.warning = distance_warning_warning;
-            }
-        } else {
-            if (sonar.warning != distance_warning_none) {
-                _tank_led.led_turn_off(sonar.debug_led_index);
-                sonar.warning = distance_warning_none;
-            }
-        }
-    }
-}
-
 void Tank::_process_ir_code(unsigned long & ir_code)
 {
     if (ir_code == IR_CODE_A) {
@@ -293,7 +217,6 @@ void Tank::_process_ir_code(unsigned long & ir_code)
             _tank_mode = mode_debug_turret;
             _tank_led.led_set_state(1, (const uint16_t[]){500, 500, 500, 2000}, 4);
         } else if (_tank_mode == mode_debug_turret) {
-            _tank_mode = mode_debug_sonar;
             _tank_led.led_set_state(1, (const uint16_t[]){500, 500, 500, 500, 500, 2000}, 6);
         } else {
             _tank_mode = mode_debug_drive;
@@ -494,16 +417,6 @@ void Tank::_process_interrupts()
         _process_turret_encoder_interrupt();
         __turret_encoder_interrupt_flag = false;
     }
-
-    if ( __sonar_front_interrupt_flag) {
-        _process_sonar_interrupt(_front_sonar_state);
-        __sonar_front_interrupt_flag = false;
-    }
-
-    if ( __sonar_rear_interrupt_flag) {
-        _process_sonar_interrupt(_rear_sonar_state);
-        __sonar_rear_interrupt_flag = false;
-    }
 }
 
 void Tank::_process_turret_calibration_interrupt()
@@ -521,16 +434,4 @@ void Tank::_process_turret_calibration_interrupt()
 void Tank::_process_turret_encoder_interrupt()
 {
     _turret_encoder_count += _turret_direction;
-}
-
-void Tank::_process_sonar_interrupt(struct sonar_state & sonar)
-{
-    uint8_t calculated_distance = int(((micros() - sonar.timer) / 2) / SONAR_FACTOR);
-
-    if (calculated_distance > 0) {
-        sonar.distance = calculated_distance;
-    }
-
-    sonar.timer = micros();
-    sonar.state = 3;
 }

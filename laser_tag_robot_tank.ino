@@ -17,8 +17,6 @@
 #define TURRET_MOTOR_PWM_PIN 11
 #define TURRET_ENCODER_PIN 13
 #define TURRET_CALIBRATION_PIN 14
-#define SONAR_FRONT_PIN A1
-#define SONAR_REAR_PIN A2
 
 unsigned long last_update_millis = 0;
 
@@ -33,8 +31,6 @@ Tank tank(
     SHIFT_DATA_PIN,
     TURRET_ENCODER_PIN,
     TURRET_CALIBRATION_PIN,
-    SONAR_FRONT_PIN,
-    SONAR_REAR_PIN,
     LED_PIN_1,
     LED_PIN_2,
     LED_PIN_3,
