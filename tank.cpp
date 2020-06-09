@@ -7,7 +7,7 @@
 #include "tank.h"
 #include "ir_codes.h"
 
-// all the global variables must be intialized here, even if we reinitialize them in the constructor
+// all the global variables must be initialized here, even if we reinitialize them in the constructor
 volatile bool __turret_calibration_interrupt_flag;
 volatile bool __turret_encoder_interrupt_flag;
 volatile bool __sonar_front_interrupt_flag;
@@ -98,26 +98,29 @@ void Tank::setup()
 
 void Tank::loop()
 {
+
     if (irrecv->decode(&results)) {
         _process_ir_code(results.value);
         irrecv->resume();
     }
 
-    _process_interrupts();
-    _update_motors();
+    //_process_interrupts();
 
+    _update_motors();
     _tank_led.loop();
-    Serial.println("motors off");
-    _motors_enabled = 1;
-    analogWrite(_left_motor_pwm_pin, 0);
-    analogWrite(_right_motor_pwm_pin, 0);
-    _write_motor_control_code(0);
-    delay(1000);
-    Serial.println("motors on");
-    analogWrite(_left_motor_pwm_pin, 100);
-    analogWrite(_right_motor_pwm_pin, 100);
-    _write_motor_control_code(40);
-    delay(1000);
+
+
+    //Serial.println("motors off");
+    //_motors_enabled = 1;
+    //analogWrite(_left_motor_pwm_pin, 0);
+    //analogWrite(_right_motor_pwm_pin, 0);
+    //_write_motor_control_code(0);
+    //delay(5000);
+    //Serial.println("motors on");
+    //analogWrite(_left_motor_pwm_pin, 255);
+    //analogWrite(_right_motor_pwm_pin, 255);
+    //_write_motor_control_code(40);
+    //delay(5000);
 }
 
 void Tank::enable_motors(bool enable)
@@ -138,26 +141,41 @@ void Tank::drive(const motor_direction left_direction, const motor_direction rig
 
 void Tank::drive_forward(const uint8_t left_speed, const uint8_t right_speed)
 {
+#ifdef DEBUG
+    Serial.println("drive forward");
+#endif
     drive(motor_forward, motor_forward, left_speed, right_speed);
 }
 
 void Tank::drive_reverse(const uint8_t left_speed, const uint8_t right_speed)
 {
+#ifdef DEBUG
+    Serial.println("drive reverse");
+#endif
     drive(motor_reverse, motor_reverse, left_speed, right_speed);
 }
 
 void Tank::drive_turn_left(uint8_t left_speed, const uint8_t right_speed)
 {
+#ifdef DEBUG
+    Serial.println("drive left");
+#endif
     drive(motor_reverse, motor_forward, left_speed, right_speed);
 }
 
 void Tank::drive_turn_right(uint8_t left_speed, const uint8_t right_speed)
 {
+#ifdef DEBUG
+    Serial.println("drive right");
+#endif
     drive(motor_forward, motor_reverse, left_speed, right_speed);
 }
 
 void Tank::drive_stop()
 {
+#ifdef DEBUG
+    Serial.println("drive stop");
+#endif
     _control_motor(_left_motor_state, motor_stop, 0);
     _control_motor(_right_motor_state, motor_stop, 0);
 }
@@ -206,25 +224,30 @@ const bool Tank::turret_has_been_calibrated()
 
 void Tank::_process_ir_code(unsigned long & ir_code)
 {
+    if (ir_code == IR_CODE_END) {
+        return;
+    }
+
+#ifdef DEBUG
+    Serial.print("Processing IR code: ");
+    Serial.println(ir_code, HEX);
+#endif
     if (ir_code == IR_CODE_A) {
         _tank_mode = mode_fight;
         _tank_led.led_turn_off(0);
         _tank_led.led_turn_off(1);
         _tank_led.led_turn_off(3);
     } else if(ir_code == IR_CODE_B) {
+#ifdef DEBUG
+        Serial.println("IR_CODE_B");
+#endif
         _tank_led.led_turn_on(0);
-        if (_tank_mode == mode_debug_drive) {
-            _tank_mode = mode_debug_turret;
-            _tank_led.led_set_state(1, (const uint16_t[]){500, 500, 500, 2000}, 4);
-        } else if (_tank_mode == mode_debug_turret) {
-            _tank_led.led_set_state(1, (const uint16_t[]){500, 500, 500, 500, 500, 2000}, 6);
-        } else {
-            _tank_mode = mode_debug_drive;
-            _tank_led.led_set_state(1, (const uint16_t[]){500, 2000}, 2);
-        }
+        _tank_mode = mode_debug_drive;
+        _tank_led.led_set_state(1, (const uint16_t[]){500, 2000}, 2);
     } else if(ir_code == IR_CODE_C) {
     } else if(ir_code == IR_CODE_UP) {
         if (_tank_mode == mode_debug_drive) {
+            turret_left();
             drive_forward();
         }
     } else if(ir_code == IR_CODE_DOWN) {

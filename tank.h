@@ -6,6 +6,8 @@
 
 #include "tank_led.h"
 
+#define DEBUG 1
+
 // delay between motor changing directions. to reduce strain on motors.
 #define MOTOR_CHANGE_DIRECTION_DELAY_MILLIS 1000
 #define MOTOR_SPEED_CHANGE_DELAY_MILLIS 10
