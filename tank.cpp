@@ -42,6 +42,15 @@ Tank::Tank()
 
 void Tank::setup()
 {
+    // initialize LEDs
+    uint8_t pins[] = {LED_PIN_1, LED_PIN_2, LED_PIN_3};
+    _tank_led.setup(pins);
+
+    _tank_led.all_off();
+
+    _tank_led.led_turn_on(0);
+    delay(250);
+
     // initialize motors
     pinMode(MOTOR_ENABLE_PIN, OUTPUT);
     pinMode(LEFT_MOTOR_PWM_PIN, OUTPUT);
@@ -71,16 +80,21 @@ void Tank::setup()
     //pinMode(_turret_calibration_pin, INPUT_PULLUP);
     //attachPCINT(digitalPinToPCINT(_turret_calibration_pin), turret_calibration_interrupt, RISING);
 
+    _tank_led.led_turn_on(1);
+    delay(250);
+
     // initialize IR
     irrecv.enableIRIn(); // Start the receiver
 
-    // initialize LEDs
-    uint8_t pins[] = {LED_PIN_1, LED_PIN_2, LED_PIN_3};
-    _tank_led.setup(pins);
+    _tank_led.led_turn_on(2);
+    delay(250);
+
+    enable_motors(true);
 
     _tank_led.led_set_state(0, (const uint16_t[]){500, 500, 500, 500}, 4);
 
-    enable_motors(true);
+
+    drive_turn_left(150, 150);
 }
 
 void Tank::loop()
@@ -93,23 +107,23 @@ void Tank::loop()
         irrecv.resume();
     }
 
-   //_process_interrupts();
+    _process_interrupts();
 
-    _update_motors();
-    //_tank_led.loop();
+    //_update_motors();
+    _tank_led.loop();
 
 
-  //  //Serial.println("motors off");
-  //  _motors_enabled = 1;
-  //  //analogWrite(LEFT_MOTOR_PWM_PIN, 0);
-  //  //analogWrite(RIGHT_MOTOR_PWM_PIN, 0);
-  //  //_write_motor_control_code(0);
-  //  //delay(5000);
-  //  Serial.println("motors on");
-  //  analogWrite(LEFT_MOTOR_PWM_PIN, 200);
-  //  analogWrite(RIGHT_MOTOR_PWM_PIN, 200);
-  //  _write_motor_control_code(40);
-  //  //delay(10000);
+    //Serial.println("motors off");
+    _motors_enabled = 1;
+    //analogWrite(LEFT_MOTOR_PWM_PIN, 0);
+    //analogWrite(RIGHT_MOTOR_PWM_PIN, 0);
+    //_write_motor_control_code(0);
+    //delay(5000);
+    Serial.println("motors on");
+    analogWrite(LEFT_MOTOR_PWM_PIN, 200);
+    analogWrite(RIGHT_MOTOR_PWM_PIN, 200);
+    _write_motor_control_code(40);
+    //delay(10000);
 }
 
 void Tank::enable_motors(bool enable)
@@ -264,31 +278,29 @@ void Tank::_update_motors()
     _update_motor(RIGHT_MOTOR_PWM_PIN, _right_motor_state);
     _update_motor(TURRET_MOTOR_PWM_PIN, _turret_motor_state);
 
-    //unsigned char new_motor_control_code = _create_motor_control_code();
+    unsigned char new_motor_control_code = _create_motor_control_code();
 
-    //if (new_motor_control_code != _motor_control_code) {
-    //    _motor_control_code = new_motor_control_code;
-    //    _write_motor_control_code(_motor_control_code);
-    //}
+    if (new_motor_control_code != _motor_control_code) {
+        _motor_control_code = new_motor_control_code;
+        _write_motor_control_code(_motor_control_code);
+    }
 }
 
 void Tank::_update_motor(const uint8_t motor_pin, motor_state & motor_state)
 {
-    //unsigned long current_millis = millis();
-    //if (motor_state.direction != motor_state.requested_direction) {
-    //    // here we check if the motor is recently switching directions
-    //    // and, if so, we just write zero to the speed-control pin
-    //    // and skip the rest of the function
-    //    if (motor_state.direction != motor_stop
-    //        && current_millis < motor_state.direction_change_request_millis + MOTOR_CHANGE_DIRECTION_DELAY_MILLIS) {
-    //        analogWrite(motor_pin, 0);
-    //        return;
-    //    } else {
-    //        motor_state.direction = motor_state.requested_direction;
-    //    }
-    //}
-
-    analogWrite(motor_pin, 150);
+    unsigned long current_millis = millis();
+    if (motor_state.direction != motor_state.requested_direction) {
+        // here we check if the motor is recently switching directions
+        // and, if so, we just write zero to the speed-control pin
+        // and skip the rest of the function
+        if (motor_state.direction != motor_stop
+            && current_millis < motor_state.direction_change_request_millis + MOTOR_CHANGE_DIRECTION_DELAY_MILLIS) {
+            analogWrite(motor_pin, 0);
+            return;
+        } else {
+            motor_state.direction = motor_state.requested_direction;
+        }
+    }
 }
 
 void Tank::_control_motor(struct motor_state & state, const motor_direction direction, const uint8_t speed)

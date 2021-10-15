@@ -21,6 +21,8 @@ class TankLED
         void loop();
         void led_turn_on(uint8_t led_index);
         void led_turn_off(uint8_t led_index);
+        void all_on();
+        void all_off();
         void led_set_state(uint8_t led_index, const uint16_t states[], const uint8_t state_count);
 
     private:

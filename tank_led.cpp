@@ -21,6 +21,20 @@ void TankLED::loop()
 void TankLED::led_turn_on(uint8_t led_index) { _turn_led_on(_led_states[led_index]); }
 void TankLED::led_turn_off(uint8_t led_index) { _turn_led_off(_led_states[led_index]); }
 
+void TankLED::all_on()
+{
+    for(uint8_t led_index = 0; led_index < LED_COUNT; ++led_index) {
+        led_turn_on(led_index);
+    }
+}
+
+void TankLED::all_off()
+{
+    for(uint8_t led_index = 0; led_index < LED_COUNT; ++led_index) {
+        led_turn_off(led_index);
+    }
+}
+
 void TankLED::led_set_state(uint8_t led_index, const uint16_t states[], const uint8_t state_count)
 {
     _led_set_state(_led_states[led_index], states, state_count);
@@ -70,7 +84,7 @@ void TankLED::_update_led(struct led_state & _led_state)
             _led_state.current_state = 0;
         }
         if(_led_state.current_state % 2 == 0) {
-            // even states are on and grounding the pin turns the LED on
+            // turn the LED on
             digitalWrite(_led_state.led_pin, LOW);
         } else {
             // turn the LED off
