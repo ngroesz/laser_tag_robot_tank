@@ -257,10 +257,13 @@ void Tank::_process_ir_code(const unsigned long & ir_code)
 
 void Tank::_update_motors()
 {
-    _update_motor(LEFT_MOTOR_PWM_PIN, _left_motor_state);
-    _update_motor(RIGHT_MOTOR_PWM_PIN, _right_motor_state);
-    _update_motor(TURRET_MOTOR_PWM_PIN, _turret_motor_state);
+    //_update_motor(LEFT_MOTOR_PWM_PIN, _left_motor_state);
+    //_update_motor(RIGHT_MOTOR_PWM_PIN, _right_motor_state);
+    //_update_motor(TURRET_MOTOR_PWM_PIN, _turret_motor_state);
 
+    analogWrite(LEFT_MOTOR_PWM_PIN, 150);
+    analogWrite(RIGHT_MOTOR_PWM_PIN, 150);
+    analogWrite(TURRET_MOTOR_PWM_PIN, 150);
     unsigned char new_motor_control_code = _create_motor_control_code();
 
     if (new_motor_control_code != _motor_control_code) {
