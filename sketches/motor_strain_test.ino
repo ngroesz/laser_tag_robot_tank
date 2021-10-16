@@ -9,7 +9,7 @@ Also a test of basic low-level motor controller code
 
 #include "tank.h"
 
-unsigned long last_update_millis = 0;
+unsigned long last_update_millis;
 
 Tank tank;
 
@@ -18,7 +18,7 @@ const char RIGHT_TURN = 1;
 const char FORWARD = 2;
 const char REVERSE = 3;
 
-const unsigned long STATE_CHANGE_DELAY = 20000;
+const unsigned long STATE_CHANGE_DELAY = 5000;
 
 char current_state = LEFT_TURN;
 
@@ -29,6 +29,8 @@ void setup()
     tank.setup();
     Serial.println("Tank initialized.");
     tank.enable_motors(1);
+
+    last_update_millis = 0;
 }
 
 void loop()
@@ -54,7 +56,6 @@ void loop()
                 tank.drive_turn_left();
                 break;
         }
-
         last_update_millis = current_millis;
     }
 

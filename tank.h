@@ -4,18 +4,11 @@
 #include <Arduino.h>
 #include <IRremote.h>
 
+#include "constants.h"
 #include "pins.h"
 #include "tank_led.h"
 
 #define DEBUG_OUTPUT 1
-
-// delay between motor changing directions. to reduce strain on motors.
-#define MOTOR_CHANGE_DIRECTION_DELAY_MILLIS 1000
-#define MOTOR_DEFAULT_SPEED 150 
-// gear ratio determined through expermentation. if an incorrect turret position is being reported, this value could be responsible.
-#define TURRET_GEAR_RATIO 24000
-// this calibration delay is so that the calibration is not triggered multiple times. probably safe to change.
-#define TURRET_CALIBRATION_DELAY_MILLIS 2000
 
 /* begin global variables */
 // Interupt routines and variables cannot be members of a class

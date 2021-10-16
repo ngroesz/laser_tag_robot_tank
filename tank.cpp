@@ -4,6 +4,7 @@
 #include <Wire.h>
 #include <PVision.h>
 
+#include "constants.h"
 #include "tank.h"
 #include "ir_codes.h"
 
@@ -96,31 +97,31 @@ void Tank::setup()
 
 void Tank::loop()
 {
-    if (irrecv.decode(&results)) {
-        uint16_t resultCode = (results.value & 0xFFFF);
-        Serial.print("IR code: " );
-        Serial.println(resultCode, HEX);
-        _process_ir_code(results.value);
-        irrecv.resume();
-    }
+    //if (irrecv.decode(&results)) {
+    //    uint16_t resultCode = (results.value & 0xFFFF);
+    //    Serial.print("IR code: " );
+    //    Serial.println(resultCode, HEX);
+    //    _process_ir_code(results.value);
+    //    irrecv.resume();
+    //}
 
-    _process_interrupts();
+    //_process_interrupts();
 
-    //_update_motors();
-    _tank_led.loop();
+    _update_motors();
+    //_tank_led.loop();
 
 
-    //Serial.println("motors off");
-    _motors_enabled = 1;
-    //analogWrite(LEFT_MOTOR_PWM_PIN, 0);
-    //analogWrite(RIGHT_MOTOR_PWM_PIN, 0);
-    //_write_motor_control_code(0);
-    //delay(5000);
-    Serial.println("motors on");
-    analogWrite(LEFT_MOTOR_PWM_PIN, 200);
-    analogWrite(RIGHT_MOTOR_PWM_PIN, 200);
-    _write_motor_control_code(40);
-    //delay(10000);
+    ////Serial.println("motors off");
+    //_motors_enabled = 1;
+    ////analogWrite(LEFT_MOTOR_PWM_PIN, 0);
+    ////analogWrite(RIGHT_MOTOR_PWM_PIN, 0);
+    ////_write_motor_control_code(0);
+    ////delay(5000);
+    //Serial.println("motors on");
+    //analogWrite(LEFT_MOTOR_PWM_PIN, 200);
+    //analogWrite(RIGHT_MOTOR_PWM_PIN, 200);
+    //_write_motor_control_code(40);
+    ////delay(10000);
 }
 
 void Tank::enable_motors(bool enable)
@@ -141,41 +142,26 @@ void Tank::drive(const motor_direction left_direction, const motor_direction rig
 
 void Tank::drive_forward(const uint8_t left_speed, const uint8_t right_speed)
 {
-#ifdef DEBUG_OUTPUT
-    Serial.println("drive forward");
-#endif
     drive(motor_forward, motor_forward, left_speed, right_speed);
 }
 
 void Tank::drive_reverse(const uint8_t left_speed, const uint8_t right_speed)
 {
-#ifdef DEBUG_OUTPUT
-    Serial.println("drive reverse");
-#endif
     drive(motor_reverse, motor_reverse, left_speed, right_speed);
 }
 
 void Tank::drive_turn_left(uint8_t left_speed, const uint8_t right_speed)
 {
-#ifdef DEBUG_OUTPUT
-    Serial.println("drive left");
-#endif
     drive(motor_reverse, motor_forward, left_speed, right_speed);
 }
 
 void Tank::drive_turn_right(uint8_t left_speed, const uint8_t right_speed)
 {
-#ifdef DEBUG_OUTPUT
-    Serial.println("drive right");
-#endif
     drive(motor_forward, motor_reverse, left_speed, right_speed);
 }
 
 void Tank::drive_stop()
 {
-#ifdef DEBUG_OUTPUT
-    Serial.println("drive stop");
-#endif
     _control_motor(_left_motor_state, motor_stop, 0);
     _control_motor(_right_motor_state, motor_stop, 0);
 }
@@ -296,6 +282,7 @@ void Tank::_update_motor(const uint8_t motor_pin, motor_state & motor_state)
             return;
         } else {
             motor_state.direction = motor_state.requested_direction;
+            analogWrite(motor_pin, motor_state.speed);
         }
     }
 }
@@ -329,73 +316,25 @@ unsigned char Tank::_create_motor_control_code()
         control_code |= _motor_control_mapping.right_track_reverse;
     }
 
-    if (_turret_motor_state.direction == motor_forward) {
-        control_code |= _motor_control_mapping.turret_left;
-    } else if (_turret_motor_state.direction == motor_reverse) {
-        control_code |= _motor_control_mapping.turret_right;
-    }
+    //if (_turret_motor_state.direction == motor_forward) {
+    //    control_code |= _motor_control_mapping.turret_left;
+    //} else if (_turret_motor_state.direction == motor_reverse) {
+    //    control_code |= _motor_control_mapping.turret_right;
+    //}
 
     return control_code;
 }
 
 void Tank::_write_motor_control_code(const unsigned char & control_code)
 {
-    _update_motor_debug_leds();
-
     if (!_motors_enabled) {
         return;
     }
 
-    char write_code = control_code;
-
-    digitalWrite(MOTOR_ENABLE_PIN, LOW);
     digitalWrite(SHIFT_CLEAR_PIN, LOW);
     digitalWrite(SHIFT_CLEAR_PIN, HIGH);
-    _shift_bit(0);
-    _shift_bit(0);
-    for (int i = 0; i < 6; ++i) {
-        if (write_code % 2 == 1) {
-            _shift_bit(1);
-        } else {
-            _shift_bit(0);
-        }
-        write_code >>= 1;
-    }
-    digitalWrite(SHIFT_CLOCK_PIN, LOW);
-    digitalWrite(SHIFT_CLOCK_PIN, HIGH);
-    digitalWrite(MOTOR_ENABLE_PIN, HIGH);
-}
-
-void Tank::_shift_bit(bool bit)
-{
-    digitalWrite(SHIFT_CLOCK_PIN, LOW);
-    if (bit) {
-        digitalWrite(SHIFT_DATA_PIN, HIGH);
-    } else {
-        digitalWrite(SHIFT_DATA_PIN, LOW);
-    }
-    digitalWrite(SHIFT_CLOCK_PIN, HIGH);
-}
-
-void Tank::_update_motor_debug_leds()
-{
-    if (_tank_mode == mode_debug_drive) {
-        if (_left_motor_state.direction == motor_forward) {
-            _tank_led.led_turn_on(2);
-        } else if (_left_motor_state.direction == motor_reverse) {
-            _tank_led.led_set_state(2, (const uint16_t[]){500, 500}, 2);
-        } else {
-            _tank_led.led_turn_off(2);
-        }
-
-        if (_right_motor_state.direction == motor_forward) {
-            _tank_led.led_turn_on(3);
-        } else if (_right_motor_state.direction == motor_reverse) {
-            _tank_led.led_set_state(3, (const uint16_t[]){500, 500}, 2);
-        } else {
-            _tank_led.led_turn_off(3);
-        }
-    }
+    shiftOut(SHIFT_DATA_PIN, SHIFT_CLOCK_PIN, MSBFIRST, 0b01011001);
+    digitalWrite(SHIFT_CLEAR_PIN, HIGH);
 }
 
 void Tank::_process_interrupts()
