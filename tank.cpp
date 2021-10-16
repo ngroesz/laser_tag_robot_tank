@@ -92,9 +92,6 @@ void Tank::setup()
     enable_motors(true);
 
     _tank_led.led_set_state(0, (const uint16_t[]){500, 500, 500, 500}, 4);
-
-
-    drive_turn_left(150, 150);
 }
 
 void Tank::loop()

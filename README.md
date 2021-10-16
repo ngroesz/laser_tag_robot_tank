@@ -16,3 +16,8 @@ You can install these via the Arduino library manager.
 
 ### Optional
  - Arduino-Makefile (https://github.com/sudar/Arduino-Makefile) I hate the Arduino IDE. I much prefer using vim to edit and Make to build/upload to the board.
+
+## Various Sketches
+
+The primary sketch is located at sketches/laser_tag_robot_tank.ino. Arduino-Makefile does not have support for multiple targets. Therefore, in order to use
+a different sketch you will need to change the sketch.ino symbolic link: `ln -sf ./sketches/motor_strain_test.ino sketch.ino`
