@@ -257,13 +257,10 @@ void Tank::_process_ir_code(const unsigned long & ir_code)
 
 void Tank::_update_motors()
 {
-    //_update_motor(LEFT_MOTOR_PWM_PIN, _left_motor_state);
-    //_update_motor(RIGHT_MOTOR_PWM_PIN, _right_motor_state);
-    //_update_motor(TURRET_MOTOR_PWM_PIN, _turret_motor_state);
+    _update_motor(LEFT_MOTOR_PWM_PIN, _left_motor_state);
+    _update_motor(RIGHT_MOTOR_PWM_PIN, _right_motor_state);
+    _update_motor(TURRET_MOTOR_PWM_PIN, _turret_motor_state);
 
-    analogWrite(LEFT_MOTOR_PWM_PIN, 150);
-    analogWrite(RIGHT_MOTOR_PWM_PIN, 150);
-    analogWrite(TURRET_MOTOR_PWM_PIN, 150);
     unsigned char new_motor_control_code = _create_motor_control_code();
 
     if (new_motor_control_code != _motor_control_code) {
@@ -308,21 +305,21 @@ unsigned char Tank::_create_motor_control_code()
     unsigned char control_code = 0;
 
     if (_left_motor_state.direction == motor_forward) {
-        control_code |= _motor_control_mapping.left_track_forward;
+        bitSet(control_code, 4);
     } else if (_left_motor_state.direction == motor_reverse) {
-        control_code |= _motor_control_mapping.left_track_reverse;
+        bitSet(control_code, 3);
     }
 
     if (_right_motor_state.direction == motor_forward) {
-        control_code |= _motor_control_mapping.right_track_forward;
+        bitSet(control_code, 2);
     } else if (_right_motor_state.direction == motor_reverse) {
-        control_code |= _motor_control_mapping.right_track_reverse;
+        bitSet(control_code, 1);
     }
 
     //if (_turret_motor_state.direction == motor_forward) {
-    //    control_code |= _motor_control_mapping.turret_left;
+    //    bitSet(control_code, 5);
     //} else if (_turret_motor_state.direction == motor_reverse) {
-    //    control_code |= _motor_control_mapping.turret_right;
+    //    bitSet(control_code, 6);
     //}
 
     return control_code;
@@ -336,7 +333,7 @@ void Tank::_write_motor_control_code(const unsigned char & control_code)
 
     digitalWrite(SHIFT_CLEAR_PIN, LOW);
     digitalWrite(SHIFT_CLEAR_PIN, HIGH);
-    shiftOut(SHIFT_DATA_PIN, SHIFT_CLOCK_PIN, MSBFIRST, 0b01011001);
+    shiftOut(SHIFT_DATA_PIN, SHIFT_CLOCK_PIN, MSBFIRST, control_code);
     digitalWrite(SHIFT_CLEAR_PIN, HIGH);
 }
 

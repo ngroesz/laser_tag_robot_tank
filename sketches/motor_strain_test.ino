@@ -55,6 +55,8 @@ void loop()
                 current_state = LEFT_TURN;
                 tank.drive_turn_left();
                 break;
+            default:
+                current_state = LEFT_TURN;
         }
         last_update_millis = current_millis;
     }
