@@ -18,9 +18,9 @@ const char RIGHT_TURN = 1;
 const char FORWARD = 2;
 const char REVERSE = 3;
 
-const unsigned long STATE_CHANGE_DELAY = 5000;
+const unsigned long STATE_CHANGE_DELAY = 10000;
 
-char current_state = LEFT_TURN;
+char current_state = FORWARD;
 
 void setup()
 {
@@ -39,24 +39,14 @@ void loop()
 
     if (current_millis > last_update_millis + STATE_CHANGE_DELAY) {
         switch (current_state) {
-            case LEFT_TURN:
-                current_state = RIGHT_TURN;
-                tank.drive_turn_right();
-                break;
-            case RIGHT_TURN:
-                current_state = FORWARD;
-                tank.drive_forward();
-                break;
             case FORWARD:
                 current_state = REVERSE;
                 tank.drive_reverse();
                 break;
             case REVERSE:
-                current_state = LEFT_TURN;
-                tank.drive_turn_left();
+                current_state = FORWARD;
+                tank.drive_forward();
                 break;
-            default:
-                current_state = LEFT_TURN;
         }
         last_update_millis = current_millis;
     }

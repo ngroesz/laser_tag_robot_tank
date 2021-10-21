@@ -44,6 +44,7 @@ struct motor_state {
     motor_direction direction;
     motor_direction requested_direction;
     uint8_t speed;
+    bool direction_change_requested;
     unsigned long direction_change_request_millis;
 };
 
@@ -83,7 +84,7 @@ class Tank
         void _process_ir_code(const unsigned long & ir_code);
 
         void _update_motors();
-        void _update_motor(const uint8_t motor_pin, struct motor_state & state);
+        uint8_t _update_motor(const uint8_t forward_code, const uint8_t reverse_code, const uint8_t motor_pin, struct motor_state & state);
         void _control_motor(struct motor_state & state, const motor_direction direction, const uint8_t speed = MOTOR_DEFAULT_SPEED);
         unsigned char _create_motor_control_code();
         void _write_motor_control_code(const unsigned char & control_code);

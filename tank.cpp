@@ -65,12 +65,14 @@ void Tank::setup()
         .direction = motor_stop,
         .requested_direction = motor_stop,
         .speed = 0,
+        .direction_change_requested = false,
         .direction_change_request_millis = 0
     };
     _right_motor_state = {
         .direction = motor_stop,
         .requested_direction = motor_stop,
         .speed = 0,
+        .direction_change_requested = false,
         .direction_change_request_millis = 0
     };
 
@@ -257,33 +259,42 @@ void Tank::_process_ir_code(const unsigned long & ir_code)
 
 void Tank::_update_motors()
 {
-    _update_motor(LEFT_MOTOR_PWM_PIN, _left_motor_state);
-    _update_motor(RIGHT_MOTOR_PWM_PIN, _right_motor_state);
-    _update_motor(TURRET_MOTOR_PWM_PIN, _turret_motor_state);
-
-    unsigned char new_motor_control_code = _create_motor_control_code();
+    unsigned char new_motor_control_code = 0;
+    new_motor_control_code |= _update_motor(CONTROL_CODE_LEFT_MOTOR_FORWARD, CONTROL_CODE_LEFT_MOTOR_REVERSE, LEFT_MOTOR_PWM_PIN, _left_motor_state);
+    new_motor_control_code |= _update_motor(CONTROL_CODE_RIGHT_MOTOR_FORWARD, CONTROL_CODE_RIGHT_MOTOR_REVERSE, RIGHT_MOTOR_PWM_PIN, _right_motor_state);
 
     if (new_motor_control_code != _motor_control_code) {
+
+        Serial.print("control code: ");
+        Serial.println(new_motor_control_code, BIN);
         _motor_control_code = new_motor_control_code;
         _write_motor_control_code(_motor_control_code);
     }
 }
 
-void Tank::_update_motor(const uint8_t motor_pin, motor_state & motor_state)
+uint8_t Tank::_update_motor(const uint8_t forward_code, const uint8_t reverse_code, const uint8_t motor_pin, motor_state & motor_state)
 {
+    analogWrite(motor_pin, motor_state.speed);
+
     unsigned long current_millis = millis();
-    if (motor_state.direction != motor_state.requested_direction) {
-        // here we check if the motor is recently switching directions
-        // and, if so, we just write zero to the speed-control pin
-        // and skip the rest of the function
-        if (motor_state.direction != motor_stop
-            && current_millis < motor_state.direction_change_request_millis + MOTOR_CHANGE_DIRECTION_DELAY_MILLIS) {
-            analogWrite(motor_pin, 0);
-            return;
-        } else {
+    if (motor_state.direction_change_requested) {
+        if (current_millis > motor_state.direction_change_request_millis + MOTOR_CHANGE_DIRECTION_DELAY_MILLIS) {
             motor_state.direction = motor_state.requested_direction;
-            analogWrite(motor_pin, motor_state.speed);
+            motor_state.direction_change_requested = false;
+        } else {
+            analogWrite(motor_pin, 0);
+            return 0;
         }
+    }
+
+    analogWrite(motor_pin, motor_state.speed);
+
+    if (motor_state.direction == motor_forward) {
+        return forward_code;
+    } else if (motor_state.direction == motor_reverse) {
+        return reverse_code;
+    } else {
+        return 0;
     }
 }
 
@@ -295,35 +306,40 @@ void Tank::_control_motor(struct motor_state & state, const motor_direction dire
     if (direction == motor_stop) {
         state.direction = motor_stop;
         state.speed = 0;
-    } else if (state.requested_direction != state.direction) {
+    } else if (state.requested_direction != state.direction && !state.direction_change_requested) {
+        state.direction_change_requested = true;
         state.direction_change_request_millis = millis();
     }
 }
 
-unsigned char Tank::_create_motor_control_code()
-{
-    unsigned char control_code = 0;
-
-    if (_left_motor_state.direction == motor_forward) {
-        bitSet(control_code, 4);
-    } else if (_left_motor_state.direction == motor_reverse) {
-        bitSet(control_code, 3);
-    }
-
-    if (_right_motor_state.direction == motor_forward) {
-        bitSet(control_code, 2);
-    } else if (_right_motor_state.direction == motor_reverse) {
-        bitSet(control_code, 1);
-    }
-
-    //if (_turret_motor_state.direction == motor_forward) {
-    //    bitSet(control_code, 5);
-    //} else if (_turret_motor_state.direction == motor_reverse) {
-    //    bitSet(control_code, 6);
-    //}
-
-    return control_code;
-}
+//unsigned char Tank::_create_motor_control_code()
+//{
+//    unsigned char control_code = 0;
+//    unsigned long current_millis = millis();
+//
+//    if (_left_motor_state.direction_change_requested) 
+//    if (_left_motor_state.direction == motor_forward) {
+//        bitSet(control_code, 4);
+//    } else if (_left_motor_state.direction == motor_reverse) {
+//        bitSet(control_code, 3);
+//    }
+//
+//    if (_right_motor_state.direction == motor_forward) {
+//        // 2
+//        bitSet(control_code, 2);
+//    } else if (_right_motor_state.direction == motor_reverse) {
+//        // 1
+//        bitSet(control_code, 1);
+//    }
+//
+//    //if (_turret_motor_state.direction == motor_forward) {
+//    //    bitSet(control_code, 5);
+//    //} else if (_turret_motor_state.direction == motor_reverse) {
+//    //    bitSet(control_code, 6);
+//    //}
+//
+//    return control_code;
+//}
 
 void Tank::_write_motor_control_code(const unsigned char & control_code)
 {
