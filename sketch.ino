@@ -1,1 +1,1 @@
-./sketches/motor_strain_test.ino
+sketches/motor_strain_test.ino

@@ -5,6 +5,7 @@
 #include <IRremote.h>
 
 #include "constants.h"
+#include "ir_codes.h"
 #include "pins.h"
 #include "tank_led.h"
 
@@ -106,11 +107,13 @@ class Tank
         struct motor_state _right_motor_state;
         struct motor_state _turret_motor_state;
 
-        bool           _motors_enabled = false;
-        long           _turret_encoder_count = 0;
-        bool           _turret_has_been_calibrated = false;
-        unsigned long  _last_turret_calibration_millis = 0;
-        short          _turret_direction = 0;
+        bool          _motors_enabled = false;
+        bool          _turret_calibration_requested = false;
+        bool          _turret_has_been_calibrated = false;
+        long          _turret_encoder_count = 0;
+        short         _turret_direction = 0;
+        unsigned long _last_ir_code = IR_CODE_END;
+        unsigned long _last_turret_calibration_millis = 0;
 };
 
 #endif

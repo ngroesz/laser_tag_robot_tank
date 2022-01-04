@@ -11,8 +11,7 @@
 // all the global variables must be initialized here, even if we reinitialize them in the constructor
 volatile bool __turret_calibration_interrupt_flag;
 volatile bool __turret_encoder_interrupt_flag;
-volatile bool __sonar_front_interrupt_flag;
-volatile bool __sonar_rear_interrupt_flag;
+volatile bool __bump_interrupt_flag;
 
 IRrecv irrecv(IR_PIN);
 decode_results results; // This will store our IR received codes
@@ -27,14 +26,9 @@ void turret_encoder_interrupt()
     __turret_encoder_interrupt_flag = true;
 }
 
-void sonar_front_interrupt()
+void bump_interrupt()
 {
-    __sonar_front_interrupt_flag = true;
-}
-
-void sonar_rear_interrupt()
-{
-    __sonar_rear_interrupt_flag = true;
+    __bump_interrupt_flag = true;
 }
 
 Tank::Tank()
@@ -43,6 +37,8 @@ Tank::Tank()
 
 void Tank::setup()
 {
+    enable_motors(false);
+
     // initialize LEDs
     uint8_t pins[] = {LED_PIN_1, LED_PIN_2, LED_PIN_3};
     _tank_led.setup(pins);
@@ -60,7 +56,9 @@ void Tank::setup()
     pinMode(SHIFT_CLEAR_PIN, OUTPUT);
     pinMode(SHIFT_CLOCK_PIN, OUTPUT);
     pinMode(SHIFT_DATA_PIN, OUTPUT);
+
     _write_motor_control_code(0);
+
     _left_motor_state = {
         .direction = motor_stop,
         .requested_direction = motor_stop,
@@ -94,18 +92,30 @@ void Tank::setup()
 
     enable_motors(true);
 
-    _tank_led.led_set_state(0, (const uint16_t[]){500, 500, 500, 500}, 4);
+    _tank_led.all_off();
 }
 
 void Tank::loop()
 {
-    //if (irrecv.decode(&results)) {
-    //    uint16_t resultCode = (results.value & 0xFFFF);
-    //    Serial.print("IR code: " );
-    //    Serial.println(resultCode, HEX);
-    //    _process_ir_code(results.value);
-    //    irrecv.resume();
-    //}
+    if (irrecv.decode(&results)) {
+        uint16_t resultCode = (results.value & 0xFFFF);
+        Serial.print("IR code: " );
+        Serial.println(resultCode, HEX);
+        _process_ir_code(results.value);
+        irrecv.resume();
+    }
+
+    //if (turret_has_been_calibrated() {
+    //} else {
+    //    _tank_led.led_turn_on(1);
+
+    if (irrecv.decode(&results)) {
+        uint16_t resultCode = (results.value & 0xFFFF);
+        Serial.print("IR code: " );
+        Serial.println(resultCode, HEX);
+        _process_ir_code(results.value);
+        irrecv.resume();
+    }
 
     //_process_interrupts();
 
@@ -216,6 +226,8 @@ void Tank::_process_ir_code(const unsigned long & ir_code)
         return;
     }
 
+    _last_ir_code = ir_code;
+
 #ifdef DEBUG_OUTPUT
     Serial.print("Processing IR code: ");
     Serial.println(ir_code, HEX);
@@ -264,9 +276,6 @@ void Tank::_update_motors()
     new_motor_control_code |= _update_motor(CONTROL_CODE_RIGHT_MOTOR_FORWARD, CONTROL_CODE_RIGHT_MOTOR_REVERSE, RIGHT_MOTOR_PWM_PIN, _right_motor_state);
 
     if (new_motor_control_code != _motor_control_code) {
-
-        Serial.print("control code: ");
-        Serial.println(new_motor_control_code, BIN);
         _motor_control_code = new_motor_control_code;
         _write_motor_control_code(_motor_control_code);
     }
@@ -311,35 +320,6 @@ void Tank::_control_motor(struct motor_state & state, const motor_direction dire
         state.direction_change_request_millis = millis();
     }
 }
-
-//unsigned char Tank::_create_motor_control_code()
-//{
-//    unsigned char control_code = 0;
-//    unsigned long current_millis = millis();
-//
-//    if (_left_motor_state.direction_change_requested) 
-//    if (_left_motor_state.direction == motor_forward) {
-//        bitSet(control_code, 4);
-//    } else if (_left_motor_state.direction == motor_reverse) {
-//        bitSet(control_code, 3);
-//    }
-//
-//    if (_right_motor_state.direction == motor_forward) {
-//        // 2
-//        bitSet(control_code, 2);
-//    } else if (_right_motor_state.direction == motor_reverse) {
-//        // 1
-//        bitSet(control_code, 1);
-//    }
-//
-//    //if (_turret_motor_state.direction == motor_forward) {
-//    //    bitSet(control_code, 5);
-//    //} else if (_turret_motor_state.direction == motor_reverse) {
-//    //    bitSet(control_code, 6);
-//    //}
-//
-//    return control_code;
-//}
 
 void Tank::_write_motor_control_code(const unsigned char & control_code)
 {
