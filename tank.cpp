@@ -1,34 +1,33 @@
-#include <Arduino.h>
-#include <PinChangeInterrupt.h>
-#include <IRremote.h>
-#include <Wire.h>
-#include <PVision.h>
-
-#include "constants.h"
 #include "tank.h"
-#include "ir_codes.h"
 
+#include <irmp.hpp>
 // all the global variables must be initialized here, even if we reinitialize them in the constructor
 volatile bool __turret_calibration_interrupt_flag;
 volatile bool __turret_encoder_interrupt_flag;
 volatile bool __bump_interrupt_flag;
+volatile byte __last_ir_code;
 
-IRrecv irrecv(IR_PIN);
-decode_results results; // This will store our IR received codes
-
-void turret_calibration_interrupt()
+void _turret_calibration_interrupt()
 {
     __turret_calibration_interrupt_flag = true;
 }
 
-void turret_encoder_interrupt()
+void _turret_encoder_interrupt()
 {
     __turret_encoder_interrupt_flag = true;
 }
 
-void bump_interrupt()
+void _bump_interrupt()
 {
     __bump_interrupt_flag = true;
+}
+
+void _ir_interrupt()
+{
+    IRMP_DATA irmp_data;
+    irmp_get_data(&irmp_data);
+    interrupts();
+    __last_ir_code = irmp_data.command;
 }
 
 Tank::Tank()
@@ -37,8 +36,6 @@ Tank::Tank()
 
 void Tank::setup()
 {
-    enable_motors(false);
-
     // initialize LEDs
     uint8_t pins[] = {LED_PIN_1, LED_PIN_2, LED_PIN_3};
     _tank_led.setup(pins);
@@ -85,37 +82,36 @@ void Tank::setup()
     delay(250);
 
     // initialize IR
-    irrecv.enableIRIn(); // Start the receiver
+    irmp_init();
+    irmp_register_complete_callback_function(&_ir_interrupt);
 
     _tank_led.led_turn_on(2);
     delay(250);
-
-    enable_motors(true);
 
     _tank_led.all_off();
 }
 
 void Tank::loop()
 {
-    if (irrecv.decode(&results)) {
-        uint16_t resultCode = (results.value & 0xFFFF);
-        Serial.print("IR code: " );
-        Serial.println(resultCode, HEX);
-        _process_ir_code(results.value);
-        irrecv.resume();
-    }
+    //if (irrecv.decode(&results)) {
+    //    uint16_t resultCode = (results.value & 0xFFFF);
+    //    Serial.print("IR code: " );
+    //    Serial.println(resultCode, HEX);
+    //    _process_ir_code(results.value);
+    //    irrecv.resume();
+    //}
 
-    //if (turret_has_been_calibrated() {
-    //} else {
-    //    _tank_led.led_turn_on(1);
+    ////if (turret_has_been_calibrated() {
+    ////} else {
+    ////    _tank_led.led_turn_on(1);
 
-    if (irrecv.decode(&results)) {
-        uint16_t resultCode = (results.value & 0xFFFF);
-        Serial.print("IR code: " );
-        Serial.println(resultCode, HEX);
-        _process_ir_code(results.value);
-        irrecv.resume();
-    }
+    //if (irrecv.decode(&results)) {
+    //    uint16_t resultCode = (results.value & 0xFFFF);
+    //    Serial.print("IR code: " );
+    //    Serial.println(resultCode, HEX);
+    //    _process_ir_code(results.value);
+    //    irrecv.resume();
+    //}
 
     //_process_interrupts();
 
@@ -136,14 +132,13 @@ void Tank::loop()
     ////delay(10000);
 }
 
+byte Tank::last_ir_code()
+{
+    return __last_ir_code;
+}
+
 void Tank::enable_motors(bool enable)
 {
-    _motors_enabled = enable;
-    if (_motors_enabled) {
-        digitalWrite(MOTOR_ENABLE_PIN, HIGH);
-    } else {
-        digitalWrite(MOTOR_ENABLE_PIN, LOW);
-    }
 }
 
 void Tank::drive(const motor_direction left_direction, const motor_direction right_direction, const uint8_t left_speed, const uint8_t right_speed)
@@ -220,54 +215,54 @@ const bool Tank::turret_has_been_calibrated()
     return _turret_has_been_calibrated;
 }
 
-void Tank::_process_ir_code(const unsigned long & ir_code)
-{
-    if (ir_code == IR_CODE_END) {
-        return;
-    }
-
-    _last_ir_code = ir_code;
-
-#ifdef DEBUG_OUTPUT
-    Serial.print("Processing IR code: ");
-    Serial.println(ir_code, HEX);
-#endif
-    if (ir_code == IR_CODE_A) {
-        _tank_mode = mode_fight;
-        _tank_led.led_turn_off(0);
-        _tank_led.led_turn_off(1);
-        _tank_led.led_turn_off(3);
-    } else if(ir_code == IR_CODE_B) {
-#ifdef DEBUG_OUTPUT
-        Serial.println("IR_CODE_B");
-#endif
-        _tank_led.led_turn_on(0);
-        _tank_mode = mode_debug_drive;
-        _tank_led.led_set_state(1, (const uint16_t[]){500, 2000}, 2);
-    } else if(ir_code == IR_CODE_C) {
-    } else if(ir_code == IR_CODE_UP) {
-        if (_tank_mode == mode_debug_drive) {
-            drive_forward();
-        }
-    } else if(ir_code == IR_CODE_DOWN) {
-        if (_tank_mode == mode_debug_drive) {
-            drive_reverse();
-        }
-    } else if(ir_code == IR_CODE_LEFT) {
-        if (_tank_mode == mode_debug_drive) {
-            drive_turn_left();
-        }
-    } else if(ir_code == IR_CODE_RIGHT) {
-        if (_tank_mode == mode_debug_drive) {
-            drive_turn_right();
-        }
-    } else if(ir_code == IR_CODE_SELECT) {
-        if (_tank_mode == mode_debug_drive) {
-            drive_stop();
-        }
-    }
-
-}
+//void Tank::_process_ir_code(const unsigned long & ir_code)
+//{
+//    if (ir_code == IR_CODE_END) {
+//        return;
+//    }
+//
+//    _last_ir_code = ir_code;
+//
+//#ifdef DEBUG_OUTPUT
+//    Serial.print("Processing IR code: ");
+//    Serial.println(ir_code, HEX);
+//#endif
+//    if (ir_code == IR_CODE_A) {
+//        _tank_mode = mode_fight;
+//        _tank_led.led_turn_off(0);
+//        _tank_led.led_turn_off(1);
+//        _tank_led.led_turn_off(3);
+//    } else if(ir_code == IR_CODE_B) {
+//#ifdef DEBUG_OUTPUT
+//        Serial.println("IR_CODE_B");
+//#endif
+//        _tank_led.led_turn_on(0);
+//        _tank_mode = mode_debug_drive;
+//        _tank_led.led_set_state(1, (const uint16_t[]){500, 2000}, 2);
+//    } else if(ir_code == IR_CODE_C) {
+//    } else if(ir_code == IR_CODE_UP) {
+//        if (_tank_mode == mode_debug_drive) {
+//            drive_forward();
+//        }
+//    } else if(ir_code == IR_CODE_DOWN) {
+//        if (_tank_mode == mode_debug_drive) {
+//            drive_reverse();
+//        }
+//    } else if(ir_code == IR_CODE_LEFT) {
+//        if (_tank_mode == mode_debug_drive) {
+//            drive_turn_left();
+//        }
+//    } else if(ir_code == IR_CODE_RIGHT) {
+//        if (_tank_mode == mode_debug_drive) {
+//            drive_turn_right();
+//        }
+//    } else if(ir_code == IR_CODE_SELECT) {
+//        if (_tank_mode == mode_debug_drive) {
+//            drive_stop();
+//        }
+//    }
+//
+//}
 
 void Tank::_update_motors()
 {
@@ -323,12 +318,7 @@ void Tank::_control_motor(struct motor_state & state, const motor_direction dire
 
 void Tank::_write_motor_control_code(const unsigned char & control_code)
 {
-    if (!_motors_enabled) {
-        return;
-    }
-
     digitalWrite(SHIFT_CLEAR_PIN, LOW);
-    digitalWrite(SHIFT_CLEAR_PIN, HIGH);
     shiftOut(SHIFT_DATA_PIN, SHIFT_CLOCK_PIN, MSBFIRST, control_code);
     digitalWrite(SHIFT_CLEAR_PIN, HIGH);
 }

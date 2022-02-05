@@ -1,1 +1,0 @@
-sketches/motor_strain_test.ino

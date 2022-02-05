@@ -1,13 +1,21 @@
 #ifndef tank_h
 #define tank_h
 
-#include <Arduino.h>
-#include <IRremote.h>
+#define IRMP_ENABLE_PIN_CHANGE_INTERRUPT
+#define IRMP_INPUT_PIN  3
+#define IRMP_SUPPORT_NEC_PROTOCOL 1
+#define IRMP_USE_COMPLETE_CALLBACK 1
 
 #include "constants.h"
 #include "ir_codes.h"
 #include "pins.h"
+#include "tank.h"
 #include "tank_led.h"
+
+#include <Arduino.h>
+#include <PinChangeInterrupt.h>
+#include <Wire.h>
+#include <PVision.h>
 
 #define DEBUG_OUTPUT 1
 
@@ -16,6 +24,7 @@
 // So these are declared outside of Tank
 extern volatile bool __turret_calibration_interrupt_flag;
 extern volatile bool __turret_encoder_interrupt_flag;
+extern volatile byte __last_ir_code;
 /* end global variables */
 
 void turret_calibration_interrupt();
@@ -81,8 +90,10 @@ class Tank
         const short turret_direction();
         const bool turret_has_been_calibrated();
 
+        byte last_ir_code();
+
     private:
-        void _process_ir_code(const unsigned long & ir_code);
+        //void _process_ir_code(const unsigned long & ir_code);
 
         void _update_motors();
         uint8_t _update_motor(const uint8_t forward_code, const uint8_t reverse_code, const uint8_t motor_pin, struct motor_state & state);
@@ -112,7 +123,6 @@ class Tank
         bool          _turret_has_been_calibrated = false;
         long          _turret_encoder_count = 0;
         short         _turret_direction = 0;
-        unsigned long _last_ir_code = IR_CODE_END;
         unsigned long _last_turret_calibration_millis = 0;
 };
 
