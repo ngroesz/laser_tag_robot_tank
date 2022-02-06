@@ -36,6 +36,8 @@ Tank::Tank()
 
 void Tank::setup()
 {
+    _write_motor_control_code(0);
+
     // initialize LEDs
     uint8_t pins[] = {LED_PIN_1, LED_PIN_2, LED_PIN_3};
     _tank_led.setup(pins);
@@ -53,8 +55,6 @@ void Tank::setup()
     pinMode(SHIFT_CLEAR_PIN, OUTPUT);
     pinMode(SHIFT_CLOCK_PIN, OUTPUT);
     pinMode(SHIFT_DATA_PIN, OUTPUT);
-
-    _write_motor_control_code(0);
 
     _left_motor_state = {
         .direction = motor_stop,

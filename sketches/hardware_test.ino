@@ -18,11 +18,8 @@ void loop()
 
     last_ir_code = tank.last_ir_code();
 
-    Serial.print("last ir code: " );
-    Serial.println(last_ir_code);
     switch (last_ir_code) {
         case IR_CODE_UP:
-            Serial.println("Tank forward.");
             tank.drive_forward();
             break;
         case IR_CODE_SELECT:
