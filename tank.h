@@ -112,7 +112,9 @@ class Tank
         tank_mode _tank_mode;
         tank_direction _tank_direction;
 
+        // TODO: I dont think that this is used?
         struct motor_control_mapping _motor_control_mapping = {32, 16, 8, 4, 2, 1};
+
         char _motor_control_code = 0;
         struct motor_state _left_motor_state;
         struct motor_state _right_motor_state;
