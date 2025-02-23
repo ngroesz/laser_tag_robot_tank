@@ -1,0 +1,9 @@
+#define IR_CODE_POWER 27
+#define IR_CODE_A 31
+#define IR_CODE_B 30
+#define IR_CODE_C 26
+#define IR_CODE_UP 5
+#define IR_CODE_DOWN 0
+#define IR_CODE_LEFT 8
+#define IR_CODE_RIGHT 1
+#define IR_CODE_SELECT 4
