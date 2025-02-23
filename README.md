@@ -11,11 +11,13 @@ Of course, you need the Arduino software. Make sure you have a recent version. A
 You can install these via the Arduino library manager.
 
  - PinChangeInterrupt (https://github.com/NicoHood/PinChangeInterrupt)
- - Arduino-IRremote (https://github.com/z3t0/Arduino-IRremote) The author recommends to uninstall the Robot-IRremote library.
+ - IRMP (https://github.com/IRMP-org/IRMP)
  - PVision (https://github.com/omwah/PVision)
 
 ### Optional
  - Arduino-Makefile (https://github.com/sudar/Arduino-Makefile) I hate the Arduino IDE. I much prefer using vim to edit and Make to build/upload to the board.
+	[In order to get this to work, I had to install the below arduino-cli and setup a configuration file for it (https://arduino.github.io/arduino-cli/1.1/configuration/) and install the arduino:avr platform]
+ - arduino-cli (https://github.com/arduino/arduino-cli) Needed for above Arudino-Makefile
 
 ## Various Sketches
 

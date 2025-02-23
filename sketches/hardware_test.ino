@@ -7,32 +7,29 @@ byte last_ir_code;
 void setup()
 {
     Serial.begin(115200);
-    Serial.println("Initializing ...");
+    Serial.println("Initializing hardware_test ...");
     tank.setup();
     Serial.println("Tank initialized.");
 }
+
+unsigned long drive_change_millis = 0;
+unsigned short drive_direction = 0;
 
 void loop()
 {
     tank.loop();
 
-    last_ir_code = tank.last_ir_code();
-
-    switch (last_ir_code) {
-        case IR_CODE_UP:
-            tank.drive_forward();
-            break;
-        case IR_CODE_SELECT:
-            tank.drive_stop();
-            break;
-        case IR_CODE_DOWN:
-            tank.drive_reverse();
-            break;
-        case IR_CODE_RIGHT:
-            tank.drive_turn_right();
-            break;
-        case IR_CODE_LEFT:
-            tank.drive_turn_left();
-            break;
+    if (drive_change_millis < millis()) {
+        Serial.println("switch direction");
+      if (drive_direction == 0) {
+        Serial.println("forward!");
+        tank.drive_forward();
+        drive_direction = 1;
+      } else {
+        Serial.println("backward!");
+        tank.drive_reverse();
+        drive_direction = 0;
+      }
+      drive_change_millis = millis() + 3000;
     }
 }

@@ -82,8 +82,8 @@ void Tank::setup()
     delay(250);
 
     // initialize IR
-    irmp_init();
-    irmp_register_complete_callback_function(&_ir_interrupt);
+    //irmp_init();
+    //irmp_register_complete_callback_function(&_ir_interrupt);
 
     _tank_led.led_turn_on(2);
     delay(250);
