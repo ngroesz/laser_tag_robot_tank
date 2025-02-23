@@ -1,6 +1,7 @@
 BOARD = arduino:avr:uno
 PATH = /home/nick/laser_tag_robot_tank/dev_sketches/simple_target
-PORT = /dev/ttyACM3
+# my attempt to automatically detect port
+$(eval PORT=$(shell sh -c "arduino-cli board list | grep arduino:avr" | awk '{print $$1}'))
 
 .PHONY:
 compile:
