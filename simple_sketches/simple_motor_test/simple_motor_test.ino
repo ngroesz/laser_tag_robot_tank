@@ -29,6 +29,7 @@ void setup() {
 
 void loop() {
     // forward
+    Serial.println("forward");
     analogWrite(LEFT_MOTOR_PWM_PIN, 255);
     analogWrite(RIGHT_MOTOR_PWM_PIN, 255);
     digitalWrite(MOTOR_ENABLE_PIN, 1);
@@ -36,6 +37,7 @@ void loop() {
     delay(5000);
 
     // stop
+    Serial.println("stop");
     analogWrite(LEFT_MOTOR_PWM_PIN, 0);
     analogWrite(RIGHT_MOTOR_PWM_PIN, 0);
     digitalWrite(MOTOR_ENABLE_PIN, 0);
@@ -43,9 +45,10 @@ void loop() {
     delay(1000);
 
     // reverse
-    analogWrite(LEFT_MOTOR_PWM_PIN, 0);
-    analogWrite(RIGHT_MOTOR_PWM_PIN, 0);
-    digitalWrite(MOTOR_ENABLE_PIN, 0);
+    Serial.println("reverse");
+    analogWrite(LEFT_MOTOR_PWM_PIN, 255);
+    analogWrite(RIGHT_MOTOR_PWM_PIN, 255);
+    digitalWrite(MOTOR_ENABLE_PIN, 1);
     write_motor_code(reverse_code);
     delay(5000);
 }
