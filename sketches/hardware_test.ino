@@ -112,8 +112,9 @@ void turret_measured_test()
 void speaker_test()
 {
   if (last_ir_command == IR_CODE_OK) {
-    Serial.println("beep");
+#ifdef SOUND_ENABLED
     tone(SPEAKER_PIN, 33, 500);
+#endif
     last_ir_command = 0;
   }
 }
@@ -128,22 +129,37 @@ void process_ir_command(int ir_command)
   switch (ir_command) {
     // numerical IR commands are used to switch test states
     case IR_CODE_ONE:
+#ifdef DEBUG_OUTPUT
+      Serial.println("Drive Test");
+#endif
       mode_function = drive_test;
       last_ir_command = 0;
       break;
     case IR_CODE_TWO:
+#ifdef DEBUG_OUTPUT
+      Serial.println("Drive Measured Test");
+#endif
       mode_function = drive_measured_test;
       last_ir_command = 0;
       break;
     case IR_CODE_THREE:
+#ifdef DEBUG_OUTPUT
+      Serial.println("Turret Test");
+#endif
       mode_function = turret_test;
       last_ir_command = 0;
       break;
     case IR_CODE_FOUR:
+#ifdef DEBUG_OUTPUT
+      Serial.println("Turret Measured Test");
+#endif
       mode_function = turret_measured_test;
       last_ir_command = 0;
       break;
     case IR_CODE_NINE:
+#ifdef DEBUG_OUTPUT
+      Serial.println("Speaker Test");
+#endif
       mode_function = speaker_test;
       last_ir_command = 0;
       break;

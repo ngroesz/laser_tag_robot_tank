@@ -2,18 +2,15 @@
 #define BUMP_PIN_REAR A3
 #define IR_RX_PIN 3
 #define IR_TX_PIN 15
-#define LED_PIN_1 0
+#define LED_PIN_1 9
 #define LED_PIN_2 14
-#define LED_PIN_3 1
-// TODO: rename to MOTOR_PWM_PIN_LEFT
-#define LEFT_MOTOR_PWM_PIN 5
-#define RIGHT_MOTOR_PWM_PIN 6
+#define LED_PIN_3 6
+#define MOTOR_PWM_PIN 5
 #define SHIFT_CLEAR_PIN 13
 #define SHIFT_CLOCK_PIN 12
 #define SHIFT_DATA_PIN 8
 #define SPEAKER_PIN 7
 #define TURRET_CALIBRATION_PIN 10
 #define TURRET_ENCODER_PIN 2
-#define TURRET_MOTOR_PWM_PIN 9
 #define WHEEL_ENCODER_PIN_LEFT 11
 #define WHEEL_ENCODER_PIN_RIGHT A2

@@ -3,6 +3,10 @@
 
 #define DEBUG_OUTPUT 0
 
+#define SOUND_ENABLED 1
+
+#define MOTORS_ENABLED
+
 #define CONTROL_CODE_RIGHT_MOTOR_FORWARD 4
 #define CONTROL_CODE_RIGHT_MOTOR_REVERSE 8
 #define CONTROL_CODE_LEFT_MOTOR_FORWARD 1
@@ -30,7 +34,8 @@
 // this is experimentally determined but could probably be figured out
 // by factoring-in wheel diameter and gear ratio.
 // this will never be perfect because the tracks can slip somewhat
-// and because the wheel encoders have a limited number of poles
+// and because the wheel encoders have a limited number of poles, which affects
+// resolution
 #define WHEEL_ENCODER_DISTANCE_RATIO 2
 
 // only check motor targets every X milliseconds.

@@ -41,8 +41,6 @@ struct MotorStatus {
   MotorDirection direction;
   MotorDirection requested_direction;
   MotorDirection last_direction;
-  uint8_t requested_speed;
-  uint8_t current_speed;
   bool direction_change_requested;
   unsigned long direction_change_request_millis;
 };
@@ -95,23 +93,23 @@ class Tank
     void set_bump_rear_callback(CallbackFunction);
     void set_ir_command_callback(CallbackFunctionWithInt);
 
-    void drive(const MotorDirection left_direction, const MotorDirection right_direction, const uint8_t left_speed = MOTOR_DEFAULT_SPEED, const uint8_t right_speed = MOTOR_DEFAULT_SPEED);
-    void drive_forward(const uint8_t left_speed = MOTOR_DEFAULT_SPEED, const uint8_t right_speed = MOTOR_DEFAULT_SPEED);
-    void drive_reverse(const uint8_t left_speed = MOTOR_DEFAULT_SPEED, const uint8_t right_speed = MOTOR_DEFAULT_SPEED);
-    void drive_reverse_target(const int16_t target_distance, CallbackFunction target_callback, const uint8_t left_speed = MOTOR_DEFAULT_SPEED, const uint8_t right_speed = MOTOR_DEFAULT_SPEED);
-    void drive_turn_left(const uint8_t left_speed = MOTOR_DEFAULT_SPEED, const uint8_t right_speed = MOTOR_DEFAULT_SPEED);
-    void drive_turn_right(const uint8_t left_speed = MOTOR_DEFAULT_SPEED, const uint8_t right_speed = MOTOR_DEFAULT_SPEED);
+    void drive(const MotorDirection left_direction, const MotorDirection right_direction, const uint8_t speed = MOTOR_DEFAULT_SPEED);
+    void drive_forward(const uint8_t speed = MOTOR_DEFAULT_SPEED);
+    void drive_reverse(const uint8_t speed = MOTOR_DEFAULT_SPEED);
+    void drive_reverse_target(const int16_t target_distance, CallbackFunction target_callback, const uint8_t speed = MOTOR_DEFAULT_SPEED);
+    void drive_turn_left(const uint8_t speed = MOTOR_DEFAULT_SPEED);
+    void drive_turn_right(const uint8_t speed = MOTOR_DEFAULT_SPEED);
     void drive_stop();
 
-    void turret_calibrate(const uint8_t speed = MOTOR_DEFAULT_SPEED);
-    void turret_left(const uint8_t speed = MOTOR_DEFAULT_SPEED);
-    void turret_right(const uint8_t speed = MOTOR_DEFAULT_SPEED);
-    void turret_left_degrees(const uint16_t degrees, const uint8_t speed = MOTOR_DEFAULT_SPEED);
-    void turret_right_degrees(const uint16_t degrees, const uint8_t speed = MOTOR_DEFAULT_SPEED);
-    void turret_left_degrees(const uint16_t degrees, CallbackFunction target_callback, const uint8_t speed = MOTOR_DEFAULT_SPEED);
-    void turret_right_degrees(const uint16_t degrees, CallbackFunction target_callback, const uint8_t speed = MOTOR_DEFAULT_SPEED);
-    void turret_set_degrees(const uint16_t target_degrees, const uint8_t speed = MOTOR_DEFAULT_SPEED);
-    void turret_set_degrees(const uint16_t target_degrees, CallbackFunction target_callback, const uint8_t speed = MOTOR_DEFAULT_SPEED);
+    void turret_calibrate();
+    void turret_left();
+    void turret_right();
+    void turret_left_degrees(const uint16_t degrees);
+    void turret_right_degrees(const uint16_t degrees);
+    void turret_left_degrees(const uint16_t degrees, CallbackFunction target_callback);
+    void turret_right_degrees(const uint16_t degrees, CallbackFunction target_callback);
+    void turret_set_degrees(const uint16_t target_degrees);
+    void turret_set_degrees(const uint16_t target_degrees, CallbackFunction target_callback);
     void turret_stop();
     const int16_t turret_get_degrees();
 
@@ -131,12 +129,11 @@ class Tank
     void _check_turret_target();
     void _turret_target_reached();
 
-    void _turret_left(const uint8_t speed);
-    void _turret_right(const uint8_t speed);
+    void _turret_left();
+    void _turret_right();
     void _update_motors();
-    uint8_t _update_motor(uint8_t control_code_motor_forward, uint8_t control_code_motor_reverse, uint8_t motor_pin, MotorStatus & motor_status);
-    void _determine_motor_update(const uint8_t forward_code, const uint8_t reverse_code, MotorStatus & status, uint8_t & control_code, uint8_t & speed);
-    void _control_motor(MotorStatus & status, const MotorDirection direction, const uint8_t speed = MOTOR_DEFAULT_SPEED);
+    uint8_t _determine_motor_control_code(const uint8_t forward_code, const uint8_t reverse_code, MotorStatus & status);
+    void _control_motor(MotorStatus & status, const MotorDirection direction);
     unsigned char _create_motor_control_code();
     void _write_motor_control_code(const unsigned char & control_code);
     unsigned char _current_motor_control_code;
@@ -145,6 +142,9 @@ class Tank
     MotorStatus _left_motor_status;
     MotorStatus _right_motor_status;
     MotorStatus _turret_motor_status;
+
+    uint8_t _requested_speed;
+    uint8_t _current_speed;
 
     struct InternalTankStatus _internal_status;
     struct BumpStatus _bump_status;
