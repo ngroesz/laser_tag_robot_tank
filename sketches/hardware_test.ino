@@ -35,38 +35,38 @@ void setup()
 
   tank.initialize();
 
-//  tank.set_ir_command_callback(process_ir_command);
-//#ifdef DEBUG_OUTPUT
-//  Serial.println("Tank initialized.");
-//#endif
-//
-//  if (CAMERA_ENABLED) {
-//    ircam.init();
-//#ifdef DEBUG_OUTPUT
-//    Serial.println("Camera initialized.");
-//#endif
-//  }
-//
-//  if (DISTANCE_ENABLED) {
-//    sensor.setTimeout(500);
-//    if (!sensor.init()) {
-//#ifdef DEBUG_OUTPUT
-//      Serial.println("Failed to detect and initialize sensor!");
-//#endif
-//      while (1) {}
-//    }
-//    sensor.startContinuous(SENSOR_READ_DELAY);
-//#ifdef DEBUG_OUTPUT
-//    Serial.println("Distance sensor initialized.");
-//#endif
-//  }
+  tank.set_ir_command_callback(process_ir_command);
+#ifdef DEBUG_OUTPUT
+  Serial.println("Tank initialized.");
+#endif
+
+  if (CAMERA_ENABLED) {
+    ircam.init();
+#ifdef DEBUG_OUTPUT
+    Serial.println("Camera initialized.");
+#endif
+  }
+
+  if (DISTANCE_ENABLED) {
+    sensor.setTimeout(500);
+    if (!sensor.init()) {
+#ifdef DEBUG_OUTPUT
+      Serial.println("Failed to detect and initialize sensor!");
+#endif
+      while (1) {}
+    }
+    sensor.startContinuous(SENSOR_READ_DELAY);
+#ifdef DEBUG_OUTPUT
+    Serial.println("Distance sensor initialized.");
+#endif
+  }
 }
 
 void loop()
 {
-  //if (mode_function) {
-  //  mode_function();
-  //}
+  if (mode_function) {
+    mode_function();
+  }
   tank.loop();
 }
 

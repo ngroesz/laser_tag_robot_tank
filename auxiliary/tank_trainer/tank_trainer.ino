@@ -7,15 +7,17 @@
 #define USE_CALLBACK_FOR_TINY_RECEIVER
 // IMPORTANT: The above IR pre-processor directives must be defined before including TinyIRReceiver.hpp
 #include "TinyIRReceiver.hpp"
+#include "TinyIRSender.hpp"
 
-const uint8_t INTERVAL_DEBOUNCE = 1;       // Update button state every 1ms
-uint32_t timeDebounce = 0;                       // Time of last debounce update
+// debounce code copied from Debounce library example code
+const uint8_t debounce_delay = 1;
+uint32_t time_debounce = 0;
 
 int blink_interval = 2000;
 uint32_t last_blink = 0;
 boolean blink_state = false;
 
-Debounce myButton(BUTTON_PIN, LOW);
+Debounce fire_button(BUTTON_PIN, LOW);
 
 boolean ir_command_received = false;
 uint16_t ir_command = 0;
@@ -23,6 +25,8 @@ uint16_t ir_command = 0;
 void setup()
 {
   Serial.begin(115200);
+  Serial.println(F("START " __FILE__ " from " __DATE__ "\r\n"));
+
   pinMode(LED_PIN, OUTPUT);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   digitalWrite(LED_PIN, LOW);
@@ -34,21 +38,31 @@ void setup()
 
 void loop()
 {
-  if (millis() - timeDebounce >= INTERVAL_DEBOUNCE) {
-    timeDebounce = millis();
-    myButton.update(); // Update button state every INTERVAL_DEBOUNCE
+  if (millis() - time_debounce >= debounce_delay) {
+    time_debounce = millis();
+    fire_button.update(); // Update button state every debounce_delay
   }
 
   // Check if button is pressed
-  if (myButton.isPressed()) {
+  if (fire_button.isPressed()) {
     Serial.println("Button pressed");
+    fire();
   }
 
   if (ir_command_received) {
     Serial.print("Received IR: ");
     Serial.println(ir_command);
     ir_command_received = false;
+
+    if (ir_command == IR_CODE_ASTERISK) {
+      Serial.println("received hit");
+    }
   }
+}
+
+void fire()
+{
+  sendNEC(IR_TX_PIN, 0x0, IR_CODE_ASTERISK, 0);
 }
 
 void handleReceivedTinyIRData() {
