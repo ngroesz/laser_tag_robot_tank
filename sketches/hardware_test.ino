@@ -3,13 +3,13 @@
 #include <Wire.h>
 
 #include "constants.h"
-#include "src/tank_constants.h"
 #include "src/ir_codes.h"
 #include "src/pins.h"
+#include "src/tank_constants.h"
 #include "src/tank.h"
 
 Tank tank;
-
+TankLed tank_led;
 PVision ircam;
 VL53L0X sensor;
 
@@ -34,6 +34,15 @@ void setup()
 #endif
 
   tank.initialize();
+
+  // it is not great that the LEDs are controlled by both the Tank class
+  // and by this sketch. however, this is just to demonstrate that the LEDs
+  // are working properly.
+  // you should not mess with the LEDs in your own combat robot, unless you
+  // are doing so as part of debugging feedback that you will eventually remove.
+  uint8_t pins[] = {LED_PIN_1, LED_PIN_2, LED_PIN_3};
+  tank_led.setup(pins);
+  tank_led.all_off();
 
   tank.set_ir_command_callback(process_ir_command);
 #ifdef DEBUG_OUTPUT
@@ -74,39 +83,100 @@ void drive_test()
 {
   switch (last_ir_command) {
     case IR_CODE_UP:
-      Serial.println("forward!");
+      Serial.println("drive forward");
       tank.drive_forward();
       last_ir_command = 0;
       break;
     case IR_CODE_RIGHT:
+      Serial.println("turn right");
       tank.drive_turn_right();
       last_ir_command = 0;
       break;
     case IR_CODE_DOWN:
+      Serial.println("drive reverse");
       tank.drive_reverse();
       last_ir_command = 0;
       break;
     case IR_CODE_LEFT:
+      Serial.println("turn left");
       tank.drive_turn_left();
       last_ir_command = 0;
       break;
     case IR_CODE_OK:
+      Serial.println("drive stop");
       tank.drive_stop();
       last_ir_command = 0;
       break;
   }
 }
 
+void drive_stop()
+{
+  tank.drive_stop();
+}
+
 void drive_measured_test()
 {
+  switch (last_ir_command) {
+    case IR_CODE_UP:
+      Serial.println("drive forward 10 cm");
+      tank.drive_forward_target(10, drive_stop);
+      last_ir_command = 0;
+      break;
+    case IR_CODE_DOWN:
+      Serial.println("drive reverse 10 cm");
+      tank.drive_reverse_target(10, drive_stop);
+      last_ir_command = 0;
+      break;
+    case IR_CODE_OK:
+      Serial.println("drive stop");
+      tank.drive_stop();
+      last_ir_command = 0;
+      break;
+  }
 }
 
 void turret_test()
 {
+  switch (last_ir_command) {
+    case IR_CODE_LEFT:
+      tank.turret_left();
+      break;
+    case IR_CODE_RIGHT:
+      tank.turret_right();
+      break;
+    case IR_CODE_OK:
+      tank.turret_stop();
+      break;
+  }
 }
 
 void turret_measured_test()
 {
+}
+
+void led_test()
+{
+  switch (last_ir_command) {
+    case IR_CODE_UP:
+      tank_led.all_on();
+      break;
+    case IR_CODE_LEFT:
+      tank_led.all_off();
+      tank_led.turn_on(0);
+      break;
+    case IR_CODE_DOWN:
+      tank_led.all_off();
+      tank_led.turn_on(1);
+      break;
+    case IR_CODE_RIGHT:
+      tank_led.all_off();
+      tank_led.turn_on(2);
+      break;
+    case IR_CODE_OK:
+      tank_led.all_off();
+      break;
+  }
 }
 
 void speaker_test()
@@ -154,6 +224,13 @@ void process_ir_command(int ir_command)
       Serial.println("Turret Measured Test");
 #endif
       mode_function = turret_measured_test;
+      last_ir_command = 0;
+      break;
+    case IR_CODE_EIGHT:
+#ifdef DEBUG_OUTPUT
+      Serial.println("LED Test");
+#endif
+      mode_function = led_test;
       last_ir_command = 0;
       break;
     case IR_CODE_NINE:

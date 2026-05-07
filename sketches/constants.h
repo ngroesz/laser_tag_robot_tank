@@ -1,1 +1,0 @@
-#define SENSOR_READ_DELAY 100

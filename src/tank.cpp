@@ -57,8 +57,8 @@ Tank::Tank()
 */
 void Tank::initialize()
 {
-#ifdef DEBUG_OUTPUT
-  Serial.println(F("Tank initializing"));
+#ifdef TANK_DEBUG_OUTPUT
+  Serial.println(F("Tank initializing ..."));
 #endif
 
   // initialize LEDs
@@ -131,6 +131,10 @@ void Tank::initialize()
   }
 
   _tank_led.turn_on(2);
+
+  #ifdef TANK_DEBUG_OUTPUT
+    Serial.println(F("... initialized."));
+  #endif
 }
 
 void Tank::loop() {
@@ -158,19 +162,6 @@ void Tank::set_ir_command_callback(CallbackFunctionWithInt callback) {
 }
 
 void Tank::drive(const MotorDirection left_direction, const MotorDirection right_direction, const uint8_t speed) {
-  Serial.print("drive speed: ");
-  Serial.println(speed);
-  Serial.print("motor requested_direction: ");
-  Serial.println(_left_motor_status.requested_direction);
-  Serial.print("directioon_change_requested: ");
-  Serial.println(_left_motor_status.direction_change_requested);
-  Serial.print("direction_change_request_millis: ");
-  Serial.println(_left_motor_status.direction_change_request_millis);
-  Serial.print("direction: ");
-  Serial.println(_left_motor_status.direction);
-  Serial.print("last_direction: ");
-  Serial.println(_left_motor_status.last_direction);
-
   _requested_speed = speed;
   _control_motor(_left_motor_status, left_direction);
   _control_motor(_right_motor_status, right_direction);
@@ -178,6 +169,15 @@ void Tank::drive(const MotorDirection left_direction, const MotorDirection right
 
 void Tank::drive_forward(const uint8_t speed) {
   drive(motor_forward, motor_forward, speed);
+}
+
+void Tank::drive_forward_target(const int16_t target_distance, CallbackFunction target_callback, const uint8_t speed) {
+  _tank_status.wheel_encoder_count_left = 0;
+  _tank_status.wheel_encoder_count_right = 0;
+  _tank_status.drive_target_reached = false;
+  _tank_status.drive_target_distance = target_distance;
+  _drive_target_callback = target_callback;
+  drive_forward(speed);
 }
 
 void Tank::drive_reverse(const uint8_t speed) {
@@ -208,7 +208,7 @@ void Tank::drive_stop() {
 }
 
 void Tank::turret_calibrate() {
-#ifdef DEBUG_OUTPUT
+#ifdef TANK_DEBUG_OUTPUT
   Serial.println(F("turret calibration"));
 #endif
   _turret_status.calibrated = false;
@@ -219,7 +219,7 @@ void Tank::turret_calibrate() {
   }
 
   turret_stop();
-#ifdef DEBUG_OUTPUT
+#ifdef TANK_DEBUG_OUTPUT
   Serial.println(F("turret has been calibrated"));
 #endif
 }
@@ -330,7 +330,7 @@ void Tank::_update_motors() {
   uint8_t new_motor_control_code = left_motor_control_code | right_motor_control_code | turret_motor_control_code;
 
   if (new_motor_control_code != _current_motor_control_code) {
-#ifdef DEBUG_OUTPUT
+#ifdef TANK_DEBUG_OUTPUT
     Serial.print(F("writing new control_code "));
     Serial.println(new_motor_control_code);
 #endif
@@ -351,39 +351,8 @@ void Tank::_update_motors() {
   }
 }
 
-//uint8_t Tank::_update_motor(uint8_t control_code_motor_forward, uint8_t control_code_motor_reverse, uint8_t motor_pin, MotorStatus & motor_status) {
-//  uint8_t motor_control_code;
-//  _determine_motor_update(control_code_motor_forward, control_code_motor_reverse, motor_status, motor_control_code, motor_speed);
-//  if (motor_speed != motor_status.current_speed) {
-//#ifdef DEBUG_OUTPUT
-//    Serial.print(F("writing new speed to pin "));
-//    Serial.print(motor_pin);
-//    Serial.print(F(": "));
-//    Serial.println(motor_speed);
-//#endif
-//    digitalWrite(motor_pin, HIGH);
-//    //analogWrite(motor_pin, motor_speed);
-//    motor_status.current_speed = motor_speed;
-//  }
-//
-//  return motor_control_code;
-//}
-
 // incorporate delay logic and return the appropriate control_code for the motor
 uint8_t Tank::_determine_motor_control_code(const uint8_t forward_code, const uint8_t reverse_code, MotorStatus & motor_status) {
-  //if (millis() % 100 == 0 && forward_code == 1) {
-  //  Serial.print("motor requested_direction: ");
-  //  Serial.println(motor_status.requested_direction);
-  //  Serial.print("direction_change_request_millis: ");
-  //  Serial.println(motor_status.direction_change_request_millis);
-  //  Serial.print("direction: ");
-  //  Serial.println(motor_status.direction);
-  //  Serial.print("last_direction: ");
-  //  Serial.println(motor_status.last_direction);
-  //  Serial.print("directioon_change_requested: ");
-  //  Serial.println(motor_status.direction_change_requested);
-  //}
-
   if (motor_status.direction_change_requested) {
     // if it is desired that the motor be traveling in the opposite direction and MOTOR_CHANGE_DIRECTION_DELAY_MILLIS has lapsed
     // then we change motor direction
@@ -416,19 +385,6 @@ void Tank::_control_motor(MotorStatus & status, const MotorDirection direction) 
     status.direction = motor_stop;
   // if the desired motor direction is not the current direction, we set the direction_change_requested flag and set the timer
   } else if (status.requested_direction != status.direction && !status.direction_change_requested) {
-
-    Serial.println("_CONTROL_MOTOR");
-    Serial.print("motor requested_direction: ");
-    Serial.println(status.requested_direction);
-    Serial.print("direction_change_request_millis: ");
-    Serial.println(status.direction_change_request_millis);
-    Serial.print("direction: ");
-    Serial.println(status.direction);
-    Serial.print("last_direction: ");
-    Serial.println(status.last_direction);
-    Serial.print("directioon_change_requested: ");
-    Serial.println(status.direction_change_requested);
-
     status.direction_change_requested = true;
     status.direction_change_request_millis = millis();
   }
@@ -436,7 +392,7 @@ void Tank::_control_motor(MotorStatus & status, const MotorDirection direction) 
 
 void Tank::_write_motor_control_code(const unsigned char & control_code) {
 #ifdef MOTORS_ENABLED
-#ifdef DEBUG_OUTPUT
+#ifdef TANK_DEBUG_OUTPUT
   Serial.print(F("Writing motor control code: "));
   Serial.println(control_code, BIN);
 #endif
@@ -463,7 +419,7 @@ void Tank::_process_encoder_flags(unsigned long current_millis) {
       _turret_status.encoder_count--;
     }
     _check_turret_target();
-#ifdef DEBUG_OUTPUT
+#ifdef TANK_DEBUG_OUTPUT
     if (_turret_status.encoder_count % 10 == 0) {
       Serial.print("encoder_count: ");
       Serial.println(_turret_status.encoder_count);
@@ -474,7 +430,7 @@ void Tank::_process_encoder_flags(unsigned long current_millis) {
 
   if (_turret_calibration_interrupt_flag) {
     _turret_calibration_interrupt_flag = false;
-#ifdef DEBUG_OUTPUT
+#ifdef TANK_DEBUG_OUTPUT
     Serial.println(F("turret calibration interrupt"));
 #endif
     // when the turret passes the calibration point (the 0 degree point), we reset
@@ -488,7 +444,7 @@ void Tank::_process_encoder_flags(unsigned long current_millis) {
       } else if (_turret_status.target_direction == right) {
         _turret_status.target_encoder_count = +encoder_difference;
       }
-#ifdef DEBUG_OUTPUT
+#ifdef TANK_DEBUG_OUTPUT
       Serial.print(F("new target encoder count: "));
       Serial.println(_turret_status.target_encoder_count);
 #endif
@@ -500,7 +456,11 @@ void Tank::_process_encoder_flags(unsigned long current_millis) {
 
   if (_left_wheel_encoder_interrupt_flag) {
     _left_wheel_encoder_interrupt_flag = false;
-
+#ifdef TANK_DEBUG_OUTPUT
+    if (millis() % 10 == 0) {
+      Serial.println(F("Left motor encoder interrupt"));
+    }
+#endif
     if (_left_motor_status.direction == motor_forward) {
         _tank_status.wheel_encoder_count_left++;
     } else if(_left_motor_status.direction == motor_reverse) {
@@ -511,7 +471,11 @@ void Tank::_process_encoder_flags(unsigned long current_millis) {
 
   if (_right_wheel_encoder_interrupt_flag) {
     _right_wheel_encoder_interrupt_flag = false;
-
+#ifdef TANK_DEBUG_OUTPUT
+    if (millis() % 10 == 0) {
+      Serial.println(F("Right motor encoder interrupt"));
+    }
+#endif
     if (_right_motor_status.direction == motor_forward) {
         _tank_status.wheel_encoder_count_right++;
     } else if(_right_motor_status.direction == motor_reverse) {
@@ -525,7 +489,7 @@ void Tank::_process_bump_flags(unsigned long current_millis) {
   if (_bump_front_interrupt_flag != _bump_status.bump_front && current_millis > _bump_status.bump_front_millis + BUMP_DETECTION_DELAY_MILLIS) {
     _bump_status.bump_front = _bump_front_interrupt_flag;
     _bump_status.bump_front_millis = current_millis;
-#ifdef DEBUG_OUTPUT
+#ifdef TANK_DEBUG_OUTPUT
     Serial.print(F("Bump front status: "));
     Serial.println(_bump_front_interrupt_flag);
 #endif
@@ -542,7 +506,7 @@ void Tank::_process_bump_flags(unsigned long current_millis) {
   if (_bump_rear_interrupt_flag != _bump_status.bump_rear && current_millis > _bump_status.bump_rear_millis + BUMP_DETECTION_DELAY_MILLIS) {
     _bump_status.bump_rear = _bump_rear_interrupt_flag;
     _bump_status.bump_rear_millis = current_millis;
-#ifdef DEBUG_OUTPUT
+#ifdef TANK_DEBUG_OUTPUT
     Serial.print(F("Bump rear status: "));
     Serial.println(_bump_rear_interrupt_flag);
 #endif
@@ -565,21 +529,25 @@ void Tank::_process_ir_flags() {
 
 void Tank::_check_drive_distance_target() {
   // check if we have a drive target
-  if (_tank_status.drive_target_distance != -1) {
-    // check if the drive target is in the reverse direction
-    if (_tank_status.drive_target_distance < 0) {
-      // check if we've reached or passed our target
-      if (_tank_status.wheel_encoder_count_left / WHEEL_ENCODER_DISTANCE_RATIO <= _tank_status.drive_target_distance && _tank_status.wheel_encoder_count_right / WHEEL_ENCODER_DISTANCE_RATIO <= _tank_status.drive_target_distance) {
-#ifdef DEBUG_OUTPUT
+  if (_tank_status.drive_target_distance != 0) {
+    if (
+      // if the target is in a forward direction, then we want the encoder count to be more than the target distance
+      (_tank_status.drive_target_distance > 0
+        && (_tank_status.wheel_encoder_count_left / WHEEL_ENCODER_DISTANCE_RATIO >= _tank_status.drive_target_distance && _tank_status.wheel_encoder_count_right / WHEEL_ENCODER_DISTANCE_RATIO >= _tank_status.drive_target_distance))
+      ||
+      // if the target is in a reverse direction, then we want the encoder count to be LESS than the target distance (because the encoder count goes in reverse when the wheel direction is in reverse)
+      (_tank_status.drive_target_distance < 0
+        && (_tank_status.wheel_encoder_count_left / WHEEL_ENCODER_DISTANCE_RATIO <= _tank_status.drive_target_distance && _tank_status.wheel_encoder_count_right / WHEEL_ENCODER_DISTANCE_RATIO <= _tank_status.drive_target_distance))
+    ) {
+#ifdef TANK_DEBUG_OUTPUT
         Serial.println(F("Drive distance target reached"));
 #endif
         _tank_status.drive_target_reached = true;
-        _tank_status.drive_target_distance = -1;
+        _tank_status.drive_target_distance = 0;
         if (_drive_target_callback) {
           _drive_target_callback();
         }
         _drive_target_callback = NULL;
-      }
     }
   }
 }

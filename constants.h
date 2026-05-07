@@ -1,5 +1,6 @@
+#define DEBUG_OUTPUT
+
 #define CAMERA_ENABLED 0
-#define DEBUG 1
 #define DISTANCE_ENABLED 0
 #define DISTANCE_MAX 8190
 #define SENSOR_READ_DELAY 100

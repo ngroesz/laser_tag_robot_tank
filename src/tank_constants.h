@@ -1,11 +1,19 @@
 #ifndef TANK_CONSTANTS_H
 #define TANK_CONSTANTS_H
 
-#define DEBUG_OUTPUT 0
+// there are Serial.print statements scattered throughout the Tank class.
+// you will see them if you have initialized Serial and you are connected to the tank.
+// removing this flag will quiet them.
+#define TANK_DEBUG_OUTPUT
 
-#define SOUND_ENABLED 1
+// the piezo speaker is annoying, if you do not want to hear it during development then comment-out this flag
+#define SOUND_ENABLED
 
+// you may wish to do programming/debugging without the motors enabled, if so comment-out this flag
 #define MOTORS_ENABLED
+
+// if you want to control the LEDs yourself, and do not want the Tank class to mess with them, you can remove this flag
+#define LEDS_ENABLED
 
 #define CONTROL_CODE_RIGHT_MOTOR_FORWARD 4
 #define CONTROL_CODE_RIGHT_MOTOR_REVERSE 8
@@ -22,7 +30,7 @@
 // this should be possible to determine mathematically, using the turret gearing
 // however, i have not done this and this is just an empirically-derived number.
 // it is certainly not exact and I think it cannot be exact.
-// the larger this number is, the farther the turret will travel to achieve one degree 
+// the larger this number is, the farther the turret will travel to achieve one degree
 // of angle change.
 #define TURRET_GEAR_RATIO 1.36
 

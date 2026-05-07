@@ -74,7 +74,8 @@ struct TankStatus {
   bool drive_target_reached = false;
   int16_t wheel_encoder_count_left = 0;
   int16_t wheel_encoder_count_right = 0;
-  int16_t drive_target_distance = -1;
+  // drive_target_distance has a sentinel value of 0, meaning that there is no drive-target
+  int16_t drive_target_distance = 0;
 };
 
 // TODO: migrate other internal data structures here
@@ -95,10 +96,12 @@ class Tank
 
     void drive(const MotorDirection left_direction, const MotorDirection right_direction, const uint8_t speed = MOTOR_DEFAULT_SPEED);
     void drive_forward(const uint8_t speed = MOTOR_DEFAULT_SPEED);
+    void drive_forward_target(const int16_t target_distance, CallbackFunction target_callback, const uint8_t speed = MOTOR_DEFAULT_SPEED);
     void drive_reverse(const uint8_t speed = MOTOR_DEFAULT_SPEED);
     void drive_reverse_target(const int16_t target_distance, CallbackFunction target_callback, const uint8_t speed = MOTOR_DEFAULT_SPEED);
     void drive_turn_left(const uint8_t speed = MOTOR_DEFAULT_SPEED);
     void drive_turn_right(const uint8_t speed = MOTOR_DEFAULT_SPEED);
+    // TODO: add drive_turn_*_degrees
     void drive_stop();
 
     void turret_calibrate();
