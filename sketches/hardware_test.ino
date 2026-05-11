@@ -51,13 +51,6 @@ void setup()
 #ifdef DEBUG_OUTPUT
   Serial.println("Tank initialized.");
 #endif
-
-  if (CAMERA_ENABLED) {
-    ircam.init();
-#ifdef DEBUG_OUTPUT
-    Serial.println("Camera initialized.");
-#endif
-  }
 }
 
 void loop()
@@ -67,6 +60,15 @@ void loop()
   }
   tank.loop();
   tank_led.loop();
+}
+
+void camera_init()
+{
+  Serial.println("Initializing camera ...");
+  ircam.init();
+#ifdef DEBUG_OUTPUT
+  Serial.println("Camera initialized.");
+#endif
 }
 
 void distance_sensor_init()

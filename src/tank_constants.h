@@ -6,6 +6,11 @@
 // removing this flag will quiet them.
 #define TANK_DEBUG_OUTPUT
 
+#define CAMERA_ENABLED 1
+#define DISTANCE_ENABLED 1
+#define DISTANCE_MAX 8190
+#define DISTANCE_SENSOR_READ_DELAY 100
+
 // the piezo speaker is annoying, if you do not want to hear it during development then comment-out this flag
 #define SOUND_ENABLED
 

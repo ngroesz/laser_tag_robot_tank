@@ -1,5 +1,5 @@
 #define BUMP_PIN_FRONT 4
-#define BUMP_PIN_REAR 18
+#define BUMP_PIN_REAR 17
 #define IR_RX_PIN 3
 #define IR_TX_PIN 15
 #define LED_PIN_1 9
