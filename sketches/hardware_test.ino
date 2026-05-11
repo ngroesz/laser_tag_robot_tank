@@ -11,19 +11,22 @@
 Tank tank;
 TankLed tank_led;
 PVision ircam;
-VL53L0X sensor;
+VL53L0X distance_sensor;
 
+// TODO: will this be used with camera test?
 struct target {
   uint16_t x;
   uint16_t y;
   uint16_t size;
 };
 
-int last_ir_command;
-
 typedef void (*CallbackFunction) ();
 
 CallbackFunction mode_function = NULL;
+
+int last_ir_command;
+
+unsigned long last_distance_sensor_update_millis;
 
 void setup()
 {
@@ -55,20 +58,6 @@ void setup()
     Serial.println("Camera initialized.");
 #endif
   }
-
-  if (DISTANCE_ENABLED) {
-    sensor.setTimeout(500);
-    if (!sensor.init()) {
-#ifdef DEBUG_OUTPUT
-      Serial.println("Failed to detect and initialize sensor!");
-#endif
-      while (1) {}
-    }
-    sensor.startContinuous(SENSOR_READ_DELAY);
-#ifdef DEBUG_OUTPUT
-    Serial.println("Distance sensor initialized.");
-#endif
-  }
 }
 
 void loop()
@@ -77,6 +66,22 @@ void loop()
     mode_function();
   }
   tank.loop();
+  tank_led.loop();
+}
+
+void distance_sensor_init()
+{
+  distance_sensor.setTimeout(500);
+  if (!distance_sensor.init()) {
+#ifdef DEBUG_OUTPUT
+    Serial.println("Failed to detect and initialize sensor!");
+#endif
+    while (1) {}
+  }
+  distance_sensor.startContinuous(DISTANCE_SENSOR_READ_DELAY);
+#ifdef DEBUG_OUTPUT
+  Serial.println("Distance sensor initialized.");
+#endif
 }
 
 void drive_test()
@@ -141,12 +146,15 @@ void turret_test()
   switch (last_ir_command) {
     case IR_CODE_LEFT:
       tank.turret_left();
+      last_ir_command = 0;
       break;
     case IR_CODE_RIGHT:
       tank.turret_right();
+      last_ir_command = 0;
       break;
     case IR_CODE_OK:
       tank.turret_stop();
+      last_ir_command = 0;
       break;
   }
 }
@@ -155,27 +163,67 @@ void turret_measured_test()
 {
 }
 
+void turret_calibration_test()
+{
+  switch (last_ir_command) {
+    case IR_CODE_OK:
+      tank.turret_calibrate();
+      last_ir_command = 0;
+      break;
+  }
+}
+
 void led_test()
 {
   switch (last_ir_command) {
     case IR_CODE_UP:
       tank_led.all_on();
+      last_ir_command = 0;
       break;
     case IR_CODE_LEFT:
       tank_led.all_off();
       tank_led.turn_on(0);
+      last_ir_command = 0;
       break;
     case IR_CODE_DOWN:
       tank_led.all_off();
       tank_led.turn_on(1);
+      last_ir_command = 0;
       break;
     case IR_CODE_RIGHT:
       tank_led.all_off();
       tank_led.turn_on(2);
+      last_ir_command = 0;
       break;
     case IR_CODE_OK:
       tank_led.all_off();
+      last_ir_command = 0;
       break;
+  }
+}
+
+void distance_sensor_test()
+{
+  if (millis() > last_distance_sensor_update_millis + DISTANCE_SENSOR_READ_DELAY) {
+    uint16_t distance = distance_sensor.readRangeContinuousMillimeters();
+
+    if (distance > 0 && distance < DISTANCE_MAX) {
+#ifdef DEBUG_OUTPUT
+      Serial.print("Distance: ");
+      Serial.println(distance);
+#endif
+      tank_led.all_off();
+      if (distance <= 100) {
+        tank_led.all_on();
+      } else if (distance > 100 && distance <= 500) {
+        tank_led.turn_on(1);
+        tank_led.turn_on(2);
+      } else {
+        tank_led.turn_on(1);
+      }
+    }
+
+    last_distance_sensor_update_millis = millis();
   }
 }
 
@@ -205,6 +253,7 @@ void process_ir_command(int ir_command)
       mode_function = drive_test;
       last_ir_command = 0;
       break;
+
     case IR_CODE_TWO:
 #ifdef DEBUG_OUTPUT
       Serial.println("Drive Measured Test");
@@ -212,6 +261,7 @@ void process_ir_command(int ir_command)
       mode_function = drive_measured_test;
       last_ir_command = 0;
       break;
+
     case IR_CODE_THREE:
 #ifdef DEBUG_OUTPUT
       Serial.println("Turret Test");
@@ -219,6 +269,7 @@ void process_ir_command(int ir_command)
       mode_function = turret_test;
       last_ir_command = 0;
       break;
+
     case IR_CODE_FOUR:
 #ifdef DEBUG_OUTPUT
       Serial.println("Turret Measured Test");
@@ -226,13 +277,32 @@ void process_ir_command(int ir_command)
       mode_function = turret_measured_test;
       last_ir_command = 0;
       break;
-    case IR_CODE_EIGHT:
+
+    case IR_CODE_FIVE:
+#ifdef DEBUG_OUTPUT
+      Serial.println("Turret Calibration Test");
+#endif
+      mode_function = turret_calibration_test;
+      last_ir_command = 0;
+      break;
+
+    case IR_CODE_SIX:
+#ifdef DEBUG_OUTPUT
+      Serial.println("Distance Sensor Test");
+#endif
+      mode_function = distance_sensor_test;
+      last_ir_command = 0;
+      distance_sensor_init();
+      break;
+
+   case IR_CODE_EIGHT:
 #ifdef DEBUG_OUTPUT
       Serial.println("LED Test");
 #endif
       mode_function = led_test;
       last_ir_command = 0;
       break;
+
     case IR_CODE_NINE:
 #ifdef DEBUG_OUTPUT
       Serial.println("Speaker Test");
