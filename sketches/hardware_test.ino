@@ -14,6 +14,7 @@ PVision ircam;
 VL53L0X distance_sensor;
 
 // TODO: will this be used with camera test?
+byte camera_result;
 struct target {
   uint16_t x;
   uint16_t y;
@@ -26,7 +27,8 @@ CallbackFunction mode_function = NULL;
 
 int last_ir_command;
 
-unsigned long last_distance_sensor_update_millis;
+unsigned long last_distance_read_millis = 0;
+unsigned long last_camera_read_millis = 0;
 
 void setup()
 {
@@ -80,7 +82,7 @@ void distance_sensor_init()
 #endif
     while (1) {}
   }
-  distance_sensor.startContinuous(DISTANCE_SENSOR_READ_DELAY);
+  distance_sensor.startContinuous(DISTANCE_READ_DELAY);
 #ifdef DEBUG_OUTPUT
   Serial.println("Distance sensor initialized.");
 #endif
@@ -206,7 +208,8 @@ void led_test()
 
 void distance_sensor_test()
 {
-  if (millis() > last_distance_sensor_update_millis + DISTANCE_SENSOR_READ_DELAY) {
+  if (millis() > last_distance_read_millis + DISTANCE_READ_DELAY) {
+    last_distance_read_millis = millis();
     uint16_t distance = distance_sensor.readRangeContinuousMillimeters();
 
     if (distance > 0 && distance < DISTANCE_MAX) {
@@ -224,8 +227,22 @@ void distance_sensor_test()
         tank_led.turn_on(1);
       }
     }
+  }
+}
 
-    last_distance_sensor_update_millis = millis();
+void camera_test()
+{
+  if (millis() > last_camera_read_millis + CAMERA_READ_DELAY) {
+    last_camera_read_millis = millis();
+    camera_result = ircam.read();
+    if (camera_result & BLOB1) {
+      Serial.print("Target detected. X:");
+      Serial.print(ircam.Blob1.X);
+      Serial.print(" Y:");
+      Serial.print(ircam.Blob1.Y);
+      Serial.print(" Size:");
+      Serial.println(ircam.Blob1.Size);
+    }
   }
 }
 
@@ -295,6 +312,15 @@ void process_ir_command(int ir_command)
       mode_function = distance_sensor_test;
       last_ir_command = 0;
       distance_sensor_init();
+      break;
+
+    case IR_CODE_SEVEN:
+#ifdef DEBUG_OUTPUT
+      Serial.println("Camera Test");
+#endif
+      mode_function = camera_test;
+      last_ir_command = 0;
+      camera_init();
       break;
 
    case IR_CODE_EIGHT:
