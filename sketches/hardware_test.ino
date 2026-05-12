@@ -32,6 +32,8 @@ unsigned long last_camera_read_millis = 0;
 
 void setup()
 {
+  Wire.begin(); // this is necessary to communicate with I2C devices
+
 #ifdef DEBUG_OUTPUT
   Serial.begin(115200);
   Serial.println(F("START " __FILE__ " from " __DATE__ "\r\n"));
@@ -75,12 +77,12 @@ void camera_init()
 
 void distance_sensor_init()
 {
+  Serial.println("Initializing distance sensor ...");
   distance_sensor.setTimeout(500);
   if (!distance_sensor.init()) {
 #ifdef DEBUG_OUTPUT
     Serial.println("Failed to detect and initialize sensor!");
 #endif
-    while (1) {}
   }
   distance_sensor.startContinuous(DISTANCE_READ_DELAY);
 #ifdef DEBUG_OUTPUT
@@ -218,14 +220,16 @@ void distance_sensor_test()
       Serial.println(distance);
 #endif
       tank_led.all_off();
-      if (distance <= 100) {
+      if (distance <= 250) {
         tank_led.all_on();
-      } else if (distance > 100 && distance <= 500) {
+      } else if (distance > 250 && distance <= 750) {
+        tank_led.turn_on(0);
         tank_led.turn_on(1);
-        tank_led.turn_on(2);
       } else {
-        tank_led.turn_on(1);
+        tank_led.turn_on(0);
       }
+    } else {
+      tank_led.all_off();
     }
   }
 }
