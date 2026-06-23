@@ -23,7 +23,7 @@
 #define CONTROL_CODE_TURRET_MOTOR_REVERSE 16
 
 // delay between motor changing directions. to reduce strain on motors.
-#define MOTOR_CHANGE_DIRECTION_DELAY_MILLIS 250
+#define MOTOR_CHANGE_DIRECTION_DELAY_MILLIS 750
 // if no speed is specified
 #define MOTOR_DEFAULT_SPEED 255
 // the ratio of turret drive encoder counts and one degree of angle.
