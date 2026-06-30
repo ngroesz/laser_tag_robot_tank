@@ -53,6 +53,6 @@
 // wheel_encoder_count_left + -(wheel_encoder_count_right) * WHEEL_ENCODER_TURN_RATIO
 // thus, when this number is larger, the number of degrees turned will be greater, for a 
 // given encoder count
-#define WHEEL_ENCODER_TURN_RATIO .5
+#define WHEEL_ENCODER_TURN_RATIO .122
 
 #endif

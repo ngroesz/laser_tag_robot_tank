@@ -208,7 +208,7 @@ void Tank::drive_turn_left_degrees(int8_t degrees, CallbackFunction target_callb
   _tank_status.wheel_encoder_count_left = 0;
   _tank_status.wheel_encoder_count_right = 0;
   _tank_status.drive_target_degrees_reached = false;
-  _tank_status.drive_target_degrees = degrees % 360;
+  _tank_status.drive_target_degrees = -degrees % 360;
   _drive_target_callback = target_callback;
   _drive(motor_reverse, motor_forward, speed);
 }
@@ -586,7 +586,7 @@ void Tank::_check_drive_turn_target() {
     if (
       // if target degrees are less than zero, we are turning left.
       (_tank_status.drive_target_degrees < 0 
-        && -_tank_status.wheel_encoder_count_left + _tank_status.wheel_encoder_count_right > _tank_status.drive_target_degrees * WHEEL_ENCODER_TURN_RATIO)
+        && _tank_status.wheel_encoder_count_left - _tank_status.wheel_encoder_count_right < _tank_status.drive_target_degrees * WHEEL_ENCODER_TURN_RATIO)
       ||
       (_tank_status.drive_target_degrees > 0 
         && _tank_status.wheel_encoder_count_left - _tank_status.wheel_encoder_count_right > _tank_status.drive_target_degrees * WHEEL_ENCODER_TURN_RATIO)

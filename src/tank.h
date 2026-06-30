@@ -76,7 +76,7 @@ struct TankStatus {
   int16_t wheel_encoder_count_left = 0;
   int16_t wheel_encoder_count_right = 0;
   // drive_target_distance has a sentinel value of 0, meaning that there is no drive-target
-  int16_t drive_target_distance = 0;
+  uint16_t drive_target_distance = 0;
   int8_t drive_target_degrees = 0;
 };
 
