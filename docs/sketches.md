@@ -13,7 +13,7 @@ follow the guide below in order to command the robot to do various things.
 
 TODO: add guide
 
-## dumb_bot.ino
+## empty_bot.ino
 
 A very dumb bot in that it has no intelligence whatsover. It merely initalizes the tank and
 registers callback functions. A good starting template if you want to write your own bot.

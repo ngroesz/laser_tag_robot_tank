@@ -1,2 +1,3 @@
 - calibrate WHEEL_ENCODER_DISTANCE_RATIO
 - if one drive motor is in wait mode, the other drive motor should probably also wait. the effects of the lag can be most easily demonstrated with the motor_stress_test.
+- make some kinda heartbeat LED

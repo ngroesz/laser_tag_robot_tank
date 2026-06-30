@@ -1,3 +1,8 @@
+/* empty_bot.ino
+Bot initializes libraries but does absolutely nothing. It's a good starting 
+template for your own bot.
+*/
+
 #include "src/tank.h"
 
 Tank tank;

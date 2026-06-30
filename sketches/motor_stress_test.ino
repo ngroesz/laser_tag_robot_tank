@@ -3,7 +3,7 @@
 * The purpose of this sketch is to stress the motor. Issues with the motors, specifically the
 * motor contoller and the Arduino, have bedevilled me since the beginning of this project.
 * The most common failure I have experienced is that turning a motor on or changing its direction
-* will cause the microcontoller to reset, either through a deprivation of power or from the electrical
+* will cause the microcontroller to reset, either because of a loss of power or from the electrical
 * noise caused by the motor.
 * Anyway, the point of this program is to constantly run the motors, in various directions, in order
 * to cause maximum load. This uses the Tank library so the motor-direction-change delay in place there
@@ -13,7 +13,7 @@
 * tank has no IR or other way to receive input, unless I were to jury-rig an IR sensor directly on to the
 * chassis.
 * So this sketch should have no particular interest to most. But I am maintaining it in the repository,
-* as I am nearly certain motor troubles will continue to haunt me.
+* as I am certain motor troubles will continue to haunt me.
 */
 
 

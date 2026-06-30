@@ -1,5 +1,8 @@
-/* dumb_bot.ino
-A bot that finds and attacks a target. Not a particularly cunning foe.
+/* wander_bot.ino
+A bot that roams around and avoids obstacles. It uses the distance sensor
+to build a 360-degree view and tracks the distance to the nearest obstacle
+that exists within 8 45-degree "radar" slices.
+The robot is a pacifist and does not shoot targets nor seek them.
 */
 
 #include <PVision.h>
@@ -12,28 +15,23 @@ A bot that finds and attacks a target. Not a particularly cunning foe.
 unsigned long last_update_millis = 0;
 
 Tank tank;
-PVision ircam;
 VL53L0X sensor;
 
-struct target {
-  uint16_t x;
-  uint16_t y;
-  uint16_t size;
+enum Mode {
+  wait,
+  calibrate,
+  wander
+}
+
+struct State {
+  Mode mode
 };
 
-bool find_target(struct target & t)
-{
-  byte result = ircam.read();
+// radar array tracks nearest obstacle within a 45 degree slice
+// radar[0]: [-22.5,22.5), radar[1]: [22.5,45), etc
+uint16t radar[8] = {0};
 
-  if (result & BLOB1) {
-      t.x = ircam.Blob1.X;
-      t.y = ircam.Blob1.Y;
-      t.size = ircam.Blob1.Size;
-      return true;
-  }
-
-  return false;
-}
+State state;
 
 bool find_distance(uint16_t & distance)
 {
@@ -51,42 +49,46 @@ bool find_distance(uint16_t & distance)
 
 void setup()
 {
-  #ifdef DEBUG_OUTPUT
+#ifdef DEBUG_OUTPUT
   Serial.begin(115200);
   Serial.println("Initializing ...");
-  #endif
+#endif
 
   Wire.begin();
 
   tank.initialize();
 
-  #ifdef DEBUG_OUTPUT
+#ifdef DEBUG_OUTPUT
   Serial.println("Tank initialized.");
-  #endif
+#endif
 
-  if (CAMERA_ENABLED) {
-    ircam.init();
-    #ifdef DEBUG_OUTPUT
-    Serial.println("Camera initialized.");
-    #endif
+  sensor.setTimeout(500);
+  if (!sensor.init()) {
+#ifdef DEBUG_OUTPUT
+    Serial.println("Failed to detect and initialize sensor!");
+#endif
+    while (1) {}
   }
-
-  if (DISTANCE_ENABLED) {
-    sensor.setTimeout(500);
-    if (!sensor.init()) {
-      #ifdef DEBUG_OUTPUT
-      Serial.println("Failed to detect and initialize sensor!");
-      #endif
-      while (1) {}
-    }
-    sensor.startContinuous(SENSOR_READ_DELAY);
-    #ifdef DEBUG_OUTPUT
-    Serial.println("Distance sensor initialized.");
-    #endif
-  }
+  sensor.startContinuous(SENSOR_READ_DELAY);
+#ifdef DEBUG_OUTPUT
+  Serial.println("Distance sensor initialized.");
+#endif
 }
 
 void loop()
+{
+  switch (state.mode) {
+    case Mode.wait:
+      break;
+    case Mode.calibrate:
+      break;
+    case Mode.wander:
+      wander();
+      break;
+  }
+}
+
+void wander()
 {
   unsigned long current_millis = millis();
 

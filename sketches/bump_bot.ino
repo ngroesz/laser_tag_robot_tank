@@ -1,3 +1,7 @@
+/* bump_bot.ino
+* A bot that just drives around and bumps into obstacles
+*/
+
 #include "src/tank.h"
 
 Tank tank;
