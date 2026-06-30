@@ -1,1 +1,1 @@
-./sketches/motor_stress_test.ino
+./sketches/hardware_test.ino

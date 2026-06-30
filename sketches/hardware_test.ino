@@ -139,6 +139,16 @@ void drive_measured_test()
       tank.drive_reverse_target(10, drive_stop);
       last_ir_command = 0;
       break;
+    case IR_CODE_RIGHT:
+      Serial.println("drive turn right 90 degrees");
+      tank.drive_turn_right_degrees(90, drive_stop);
+      last_ir_command = 0;
+      break;
+    case IR_CODE_LEFT:
+      Serial.println("drive turn left 90 degrees");
+      tank.drive_turn_left_degrees(90, drive_stop);
+      last_ir_command = 0;
+      break;
     case IR_CODE_OK:
       Serial.println("drive stop");
       tank.drive_stop();
@@ -167,6 +177,20 @@ void turret_test()
 
 void turret_measured_test()
 {
+  switch (last_ir_command) {
+    case IR_CODE_LEFT:
+      tank.turret_left_degrees(90);
+      last_ir_command = 0;
+      break;
+    case IR_CODE_RIGHT:
+      tank.turret_right_degrees(90);
+      last_ir_command = 0;
+      break;
+    case IR_CODE_OK:
+      tank.turret_stop();
+      last_ir_command = 0;
+      break;
+  }
 }
 
 void turret_calibration_test()

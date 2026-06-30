@@ -71,11 +71,13 @@ struct TankStatus {
   uint8_t hit_count = 0;
   bool bump_front = false;
   bool bump_rear = false;
-  bool drive_target_reached = false;
+  bool drive_target_distance_reached = false;
+  bool drive_target_degrees_reached = false;
   int16_t wheel_encoder_count_left = 0;
   int16_t wheel_encoder_count_right = 0;
   // drive_target_distance has a sentinel value of 0, meaning that there is no drive-target
   int16_t drive_target_distance = 0;
+  int8_t drive_target_degrees = 0;
 };
 
 // TODO: migrate other internal data structures here
@@ -94,14 +96,14 @@ class Tank
     void set_bump_rear_callback(CallbackFunction);
     void set_ir_command_callback(CallbackFunctionWithInt);
 
-    void drive(const MotorDirection left_direction, const MotorDirection right_direction, const uint8_t speed = MOTOR_DEFAULT_SPEED);
     void drive_forward(const uint8_t speed = MOTOR_DEFAULT_SPEED);
     void drive_forward_target(const int16_t target_distance, CallbackFunction target_callback, const uint8_t speed = MOTOR_DEFAULT_SPEED);
     void drive_reverse(const uint8_t speed = MOTOR_DEFAULT_SPEED);
     void drive_reverse_target(const int16_t target_distance, CallbackFunction target_callback, const uint8_t speed = MOTOR_DEFAULT_SPEED);
     void drive_turn_left(const uint8_t speed = MOTOR_DEFAULT_SPEED);
     void drive_turn_right(const uint8_t speed = MOTOR_DEFAULT_SPEED);
-    // TODO: add drive_turn_*_degrees
+    void drive_turn_left_degrees(int8_t degrees, CallbackFunction target_callback, const uint8_t speed = MOTOR_DEFAULT_SPEED);
+    void drive_turn_right_degrees(int8_t degrees, CallbackFunction target_callback, const uint8_t speed = MOTOR_DEFAULT_SPEED);
     void drive_stop();
 
     void turret_calibrate();
@@ -128,7 +130,10 @@ class Tank
     void _process_bump_flags(unsigned long current_millis);
     void _process_ir_flags();
 
+    void _drive(const MotorDirection left_direction, const MotorDirection right_direction, const uint8_t speed = MOTOR_DEFAULT_SPEED);
+    void _check_drive_targets();
     void _check_drive_distance_target();
+    void _check_drive_turn_target();
     void _check_turret_target();
     void _turret_target_reached();
 

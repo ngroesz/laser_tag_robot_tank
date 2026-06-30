@@ -10,26 +10,28 @@
 #define SOUND_ENABLED
 
 // you may wish to do programming/debugging without the motors enabled, if so comment-out this flag
+// if you are programming with just a 5V USB connecting cable and no batteries connected to the motor power
+// supply, then you should definitely comment-out this flag
 #define MOTORS_ENABLED
 
 // if you want to control the LEDs yourself, and do not want the Tank class to mess with them, you can remove this flag
 #define LEDS_ENABLED
 
-#define CONTROL_CODE_RIGHT_MOTOR_FORWARD 4
-#define CONTROL_CODE_RIGHT_MOTOR_REVERSE 8
+#define CONTROL_CODE_RIGHT_MOTOR_FORWARD 8
+#define CONTROL_CODE_RIGHT_MOTOR_REVERSE 4
 #define CONTROL_CODE_LEFT_MOTOR_FORWARD 1
 #define CONTROL_CODE_LEFT_MOTOR_REVERSE 2
-#define CONTROL_CODE_TURRET_MOTOR_FORWARD 32
-#define CONTROL_CODE_TURRET_MOTOR_REVERSE 16
+#define CONTROL_CODE_TURRET_MOTOR_FORWARD 16
+#define CONTROL_CODE_TURRET_MOTOR_REVERSE 32
 
-// delay between motor changing directions. to reduce strain on motors.
+// delay between motor changing directions. to reduce strain on motors. i'm uncertain what the best
+// delay is. it should certainly be more than 0. i'm fairly certain it can be less than 1000 (1 second)
+// the idea is that a motor should stop spinning before applying opposite polarity.
 #define MOTOR_CHANGE_DIRECTION_DELAY_MILLIS 750
 // if no speed is specified
 #define MOTOR_DEFAULT_SPEED 255
 // the ratio of turret drive encoder counts and one degree of angle.
-// this should be possible to determine mathematically, using the turret gearing
-// however, i have not done this and this is just an empirically-derived number.
-// it is certainly not exact and I think it cannot be exact.
+// it is empirically-derived and not precise
 // the larger this number is, the farther the turret will travel to achieve one degree
 // of angle change.
 #define TURRET_GEAR_RATIO 1.36
@@ -46,12 +48,11 @@
 // resolution
 #define WHEEL_ENCODER_DISTANCE_RATIO 2
 
-// only check motor targets every X milliseconds.
-// this includes drive and turret targets.
-// this check involves some math so i don't wish to do it every iteration.
-#define MOTOR_TARGET_CHECK_DELAY_MILLIS 50
-
-// similarily for the turret target degrees
-#define TURRET_TARGET_DEGREES_CHECK_DELAY_MILLIS 50
+// this number determines the relationship between wheel encoder count and degrees turned
+// for example, when calculating right turn for N degrees the formula is:
+// wheel_encoder_count_left + -(wheel_encoder_count_right) * WHEEL_ENCODER_TURN_RATIO
+// thus, when this number is larger, the number of degrees turned will be greater, for a 
+// given encoder count
+#define WHEEL_ENCODER_TURN_RATIO .5
 
 #endif
