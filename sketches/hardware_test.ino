@@ -21,9 +21,9 @@ struct target {
   uint16_t size;
 };
 
-typedef void (*CallbackFunction) ();
+typedef void (*ModeFunction) ();
 
-CallbackFunction mode_function = NULL;
+ModeFunction mode_function = NULL;
 
 int last_ir_command;
 

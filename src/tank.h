@@ -1,6 +1,7 @@
 #ifndef tank_h
 #define tank_h
 
+// it's important to define these constants before including TinyIRReceiver.hpp (which is imported in tank.cpp)
 #define IR_RECEIVE_PIN IR_RX_PIN
 #define USE_CALLBACK_FOR_TINY_RECEIVER
 
@@ -22,9 +23,9 @@ typedef void (*CallbackFunctionWithInt) (int);
 void _turret_encoder_interrupt();
 void _turret_calibration_interrupt();
 void _bump_0_interrupt();
-
-//void handleReceivedTinyIRData();
 /* end global routines */
+
+//bool game_mode_active;
 
 enum MotorDirection {
   motor_stop,
@@ -54,8 +55,8 @@ struct BumpStatus {
 
 // TODO: use this?
 struct IRStatus {
-  bool ir_command_received = false;
-  uint16_t command = 0;
+  uint16_t last_command = 0;
+  CallbackFunctionWithInt ir_command_callback = NULL;
 };
 
 struct TurretStatus {
@@ -67,6 +68,8 @@ struct TurretStatus {
   CallbackFunction target_callback;
 };
 
+// TankStatus is a data structure intended to be returned to the client. It should contain
+// all the information that the client will care about.
 struct TankStatus {
   uint8_t hit_count = 0;
   bool bump_front = false;
@@ -80,16 +83,13 @@ struct TankStatus {
   int8_t drive_target_degrees = 0;
 };
 
-// TODO: migrate other internal data structures here
-struct InternalTankStatus {
-};
-
 class Tank
 {
   public:
     Tank();
 
     void initialize();
+    void setup_routine();
     void loop();
 
     void set_bump_front_callback(CallbackFunction);
@@ -117,6 +117,8 @@ class Tank
     void turret_set_degrees(const uint16_t target_degrees, CallbackFunction target_callback);
     void turret_stop();
     const int16_t turret_get_degrees();
+    // TODO: we might end up using this?
+    const bool turret_has_been_calibrated();
 
     TankStatus get_status();
 
@@ -146,15 +148,15 @@ class Tank
     void _write_motor_control_code(const unsigned char & control_code);
     unsigned char _current_motor_control_code;
 
+    bool game_mode_active;
+
+    uint8_t _requested_speed;
+    uint8_t _current_speed;
 
     MotorStatus _left_motor_status;
     MotorStatus _right_motor_status;
     MotorStatus _turret_motor_status;
 
-    uint8_t _requested_speed;
-    uint8_t _current_speed;
-
-    struct InternalTankStatus _internal_status;
     struct BumpStatus _bump_status;
     struct IRStatus _ir_status;
     struct TurretStatus _turret_status;
@@ -163,7 +165,6 @@ class Tank
     CallbackFunction _bump_front_callback = NULL;
     CallbackFunction _bump_rear_callback = NULL;
     CallbackFunction _drive_target_callback = NULL;
-    CallbackFunctionWithInt _ir_command_callback = NULL;
 };
 
 #endif

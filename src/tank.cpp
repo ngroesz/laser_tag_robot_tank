@@ -61,10 +61,12 @@ void Tank::initialize()
   Serial.println(F("Tank initializing ..."));
 #endif
 
+  game_mode_active = false;
+
   // initialize LEDs
   uint8_t pins[] = {LED_PIN_1, LED_PIN_2, LED_PIN_3};
   _tank_led.setup(pins);
-  _tank_led.turn_on(0);
+  _tank_led.on(0);
   delay(250);
 
   // initialize motors
@@ -99,7 +101,7 @@ void Tank::initialize()
     .direction_change_request_millis = 0
   };
 
-  _tank_led.turn_on(1);
+  _tank_led.on(1);
   delay(250);
 
   // initialize bump detectors
@@ -130,11 +132,36 @@ void Tank::initialize()
     Serial.println(F("could not initialize IR"));
   }
 
-  _tank_led.turn_on(2);
+  _tank_led.on(2);
 
   #ifdef TANK_DEBUG_OUTPUT
-    Serial.println(F("... initialized."));
+    Serial.println(F("... tank initialized."));
   #endif
+}
+
+void Tank::setup_routine() {
+  _tank_led.all_off();
+  _tank_led.set_blinks(0, (const uint16_t[]){500, 500}, 2);
+
+  do {
+    loop();
+  } while(_ir_status.last_command != IR_CODE_OK);
+  _ir_status.last_command = 0;
+
+  _tank_led.set_blinks(1, (const uint16_t[]){500, 500}, 2);
+
+  // turret_calibrate will not return until turret is calibrated
+  turret_calibrate();
+
+  _tank_led.set_blinks(2, (const uint16_t[]){500, 500}, 2);
+
+  do {
+    loop();
+  } while(_ir_status.last_command != IR_CODE_OK);
+  _ir_status.last_command = 0;
+
+  _tank_led.all_off();
+  game_mode_active = true;
 }
 
 void Tank::loop() {
@@ -158,7 +185,7 @@ void Tank::set_bump_rear_callback(CallbackFunction callback) {
 }
 
 void Tank::set_ir_command_callback(CallbackFunctionWithInt callback) {
-  _ir_command_callback = callback;
+  _ir_status.ir_command_callback = callback;
 }
 
 void Tank::drive_forward(const uint8_t speed) {
@@ -262,29 +289,27 @@ void Tank::turret_right() {
 }
 
 void Tank::turret_left_degrees(const uint16_t degrees) {
-  _turret_status.has_target = true;
-  _turret_status.target_direction = left;
-  _turret_status.target_encoder_count = _turret_status.encoder_count - round(degrees * TURRET_GEAR_RATIO);
-  _turret_status.target_callback = NULL;
-  _turret_left();
+  turret_left_degrees(degrees, NULL);
 }
 
 void Tank::turret_right_degrees(const uint16_t degrees) {
-  _turret_status.has_target = true;
-  _turret_status.target_direction = right;
-  _turret_status.target_encoder_count = _turret_status.encoder_count + round(degrees * TURRET_GEAR_RATIO);
-  _turret_status.target_callback = NULL;
-  _turret_right();
+  turret_right_degrees(degrees, NULL);
 }
 
 void Tank::turret_left_degrees(const uint16_t degrees, CallbackFunction target_callback) {
+  _turret_status.has_target = true;
+  _turret_status.target_direction = left;
+  _turret_status.target_encoder_count = _turret_status.encoder_count - round(degrees * TURRET_GEAR_RATIO);
   _turret_status.target_callback = target_callback;
-  turret_left_degrees(degrees);
+  _turret_left();
 }
 
 void Tank::turret_right_degrees(const uint16_t degrees, CallbackFunction target_callback) {
+  _turret_status.has_target = true;
+  _turret_status.target_direction = right;
+  _turret_status.target_encoder_count = _turret_status.encoder_count + round(degrees * TURRET_GEAR_RATIO);
   _turret_status.target_callback = target_callback;
-  turret_right_degrees(degrees);
+  _turret_right();
 }
 
 void Tank::turret_set_degrees(const uint16_t target_degrees) {
@@ -331,6 +356,10 @@ const int16_t Tank::turret_get_degrees() {
   int16_t normalized_turret_position = normalize_angle(turret_position);
 
   return normalized_turret_position;
+}
+
+const bool Tank::turret_has_been_calibrated() {
+  return _turret_status.calibrated;
 }
 
 const int16_t Tank::normalize_angle(const int16_t degrees) {
@@ -536,8 +565,9 @@ void Tank::_process_bump_flags(unsigned long current_millis) {
 void Tank::_process_ir_flags() {
   if (_ir_command_received) {
     _ir_command_received = false;
-    if (_ir_command_callback) {
-      _ir_command_callback(_ir_command);
+    _ir_status.last_command = _ir_command;
+    if (_ir_status.ir_command_callback) {
+      _ir_status.ir_command_callback(_ir_status.last_command);
     }
   }
 }

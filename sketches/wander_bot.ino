@@ -12,26 +12,20 @@ The robot is a pacifist and does not shoot targets nor seek them.
 #include "constants.h"
 #include "src/tank.h"
 
-unsigned long last_update_millis = 0;
+#define SENSOR_READ_DELAY 100
+#define MAX_VALID_DISTANCE 8189
 
 Tank tank;
 VL53L0X sensor;
 
-enum Mode {
-  wait,
-  calibrate,
-  wander
-}
-
-struct State {
-  Mode mode
-};
+typedef void (*ModeFunction) ();
+unsigned long last_distance_update_millis = 0;
+uint16_t last_ir_command;
+ModeFunction mode_function;
 
 // radar array tracks nearest obstacle within a 45 degree slice
 // radar[0]: [-22.5,22.5), radar[1]: [22.5,45), etc
-uint16t radar[8] = {0};
-
-State state;
+uint16_t radar[8] = {0};
 
 bool find_distance(uint16_t & distance)
 {
@@ -51,69 +45,91 @@ void setup()
 {
 #ifdef DEBUG_OUTPUT
   Serial.begin(115200);
-  Serial.println("Initializing ...");
+  Serial.println(F("Initializing ..."));
 #endif
 
   Wire.begin();
 
   tank.initialize();
 
-#ifdef DEBUG_OUTPUT
-  Serial.println("Tank initialized.");
-#endif
-
   sensor.setTimeout(500);
   if (!sensor.init()) {
 #ifdef DEBUG_OUTPUT
-    Serial.println("Failed to detect and initialize sensor!");
+    Serial.println(F("Failed to detect and initialize sensor!"));
 #endif
     while (1) {}
   }
   sensor.startContinuous(SENSOR_READ_DELAY);
 #ifdef DEBUG_OUTPUT
-  Serial.println("Distance sensor initialized.");
+  Serial.println(F("Distance sensor initialized."));
 #endif
+
+  tank.setup_routine();
+
+  Serial.println("Setup routine has completed");
+
+  // the first thing we want to do is reconnoiter
+  mode_function = begin_recon;
 }
+
 
 void loop()
 {
-  switch (state.mode) {
-    case Mode.wait:
-      break;
-    case Mode.calibrate:
-      break;
-    case Mode.wander:
-      wander();
-      break;
+  // if mode_function is set, call it
+  // if you want to the bot to be in idle mode, set mode_function to NULL
+  if (mode_function) {
+    mode_function();
+  }
+
+  tank.loop();
+}
+
+void begin_recon()
+{
+  Serial.println("starting recon");
+  // after the turret spins 360 degrees, the start_wander() function will be called
+  mode_function = recon;
+  tank.turret_left_degrees(360, start_wander);
+}
+
+void recon()
+{
+  if (millis() > last_distance_update_millis + SENSOR_READ_DELAY) {
+    uint16_t distance;
+    if (find_distance(distance)) {
+#ifdef DEBUG_OUTPUT
+      Serial.print("distance: ");
+      Serial.println(distance);
+#endif
+      // assuming the turret has been calibrated, turret_get_degrees returns a number between 0 and 359, inclusive
+      int16_t degrees = tank.turret_get_degrees();
+      int8_t radar_index = floor(tank.normalize_angle(degrees + 22.5) / 45);
+      radar[radar_index] = distance;
+    }
+    last_distance_update_millis = millis();
+  }
+}
+
+void start_wander()
+{
+  mode_function = NULL;
+  Serial.println("ready to wander");
+  Serial.println("contents of radar[]:");
+  for (int i = 0; i < 8; ++i) {
+    Serial.println(radar[i]);
   }
 }
 
 void wander()
 {
-  unsigned long current_millis = millis();
-
-  if (current_millis > last_update_millis + SENSOR_READ_DELAY) {
-    struct target my_target;
-    if (find_target(my_target)) {
-      #ifdef DEBUG_OUTPUT
-      Serial.println("Target Detected");
-      Serial.print(" X: ");
-      Serial.print(my_target.x);
-      Serial.print(" Y: ");
-      Serial.print(my_target.y);
-      Serial.print(" Size: ");
-      Serial.println(my_target.size);
-      #endif
-    }
-
-    uint16_t distance;
-    if (find_distance(distance)) {
-      #ifdef DEBUG_OUTPUT
-      Serial.print("distance: ");
-      Serial.println(distance);
-      #endif
-    }
-    last_update_millis = current_millis;
-  }
-  tank.loop();
+  //if (millis() > last_distance_update_millis + SENSOR_READ_DELAY) {
+  //  uint16_t distance;
+  //  if (find_distance(distance)) {
+  //    #ifdef DEBUG_OUTPUT
+  //    Serial.print("distance: ");
+  //    Serial.println(distance);
+  //    #endif
+  //  }
+  //  last_distance_update_millis = millis();
+  //}
 }
