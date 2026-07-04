@@ -129,14 +129,16 @@ void Tank::initialize()
   _bump_status.bump_rear_millis = 0;
 
   if (!initPCIInterruptForTinyReceiver()) {
+#ifdef TANK_DEBUG_OUTPUT
     Serial.println(F("could not initialize IR"));
+#endif
   }
 
   _tank_led.on(2);
 
-  #ifdef TANK_DEBUG_OUTPUT
+#ifdef TANK_DEBUG_OUTPUT
     Serial.println(F("... tank initialized."));
-  #endif
+#endif
 }
 
 void Tank::setup_routine() {
@@ -190,7 +192,7 @@ void Tank::set_ir_command_callback(CallbackFunctionWithInt callback) {
 
 void Tank::drive_forward(const uint8_t speed) {
   _tank_status.drive_target_distance = 0;
-  _tank_status.drive_target_degrees = 0;
+  _tank_status.drive_target_degrees = -1;
   _drive(motor_forward, motor_forward, speed);
 }
 
@@ -205,7 +207,7 @@ void Tank::drive_forward_target(const int16_t target_distance, CallbackFunction 
 
 void Tank::drive_reverse(const uint8_t speed) {
   _tank_status.drive_target_distance = 0;
-  _tank_status.drive_target_degrees = 0;
+  _tank_status.drive_target_degrees = -1;
   _drive(motor_reverse, motor_reverse, speed);
 }
 
@@ -220,27 +222,43 @@ void Tank::drive_reverse_target(const int16_t target_distance, CallbackFunction 
 
 void Tank::drive_turn_left(uint8_t speed) {
   _tank_status.drive_target_distance = 0;
-  _tank_status.drive_target_degrees = 0;
+  _tank_status.drive_target_degrees = -1;
   _drive(motor_reverse, motor_forward, speed);
 }
 
 void Tank::drive_turn_right(uint8_t speed) {
   _tank_status.drive_target_distance = 0;
-  _tank_status.drive_target_degrees = 0;
+  _tank_status.drive_target_degrees = -1;
   _drive(motor_forward, motor_reverse, speed);
 }
 
-void Tank::drive_turn_left_degrees(int8_t degrees, CallbackFunction target_callback, uint8_t speed) {
+void Tank::drive_turn_degrees(int16_t degrees, CallbackFunction target_callback, uint8_t speed) {
+  // TODO: I'm still not sure it is turning left/right in a reasonable way
+  int16_t normalized_degrees = normalize_angle(degrees);
+  Serial.print("told to turn toward degrees ");
+  Serial.println(normalized_degrees);
+  if (normalized_degrees > 0 && normalized_degrees <= 180) {
+    Serial.println("right turn");
+    drive_turn_right_degrees(normalized_degrees, target_callback, speed);
+  } else {
+    Serial.println("left turn");
+    drive_turn_left_degrees(normalized_degrees, target_callback, speed);
+  }
+}
+
+void Tank::drive_turn_left_degrees(int16_t degrees, CallbackFunction target_callback, uint8_t speed) {
   _tank_status.drive_target_distance = 0;
   _tank_status.wheel_encoder_count_left = 0;
   _tank_status.wheel_encoder_count_right = 0;
+  // TODO: this variable is not currently being used. But it might be used in TankStatus
+  // I dunno, could be kinda pointless since we already have callback functionality
   _tank_status.drive_target_degrees_reached = false;
   _tank_status.drive_target_degrees = -degrees % 360;
   _drive_target_callback = target_callback;
   _drive(motor_reverse, motor_forward, speed);
 }
 
-void Tank::drive_turn_right_degrees(int8_t degrees, CallbackFunction target_callback, uint8_t speed) {
+void Tank::drive_turn_right_degrees(int16_t degrees, CallbackFunction target_callback, uint8_t speed) {
   _tank_status.drive_target_distance = 0;
   _tank_status.wheel_encoder_count_left = 0;
   _tank_status.wheel_encoder_count_right = 0;
@@ -252,11 +270,9 @@ void Tank::drive_turn_right_degrees(int8_t degrees, CallbackFunction target_call
 
 void Tank::drive_stop() {
   _tank_status.drive_target_distance = 0;
-  _tank_status.drive_target_degrees = 0;
+  _tank_status.drive_target_degrees = -1;
   _requested_speed = 0;
-  // TODO: should this be changed to a _drive(motor_stop, motor_stop) call?
-  _control_motor(_left_motor_status, motor_stop);
-  _control_motor(_right_motor_status, motor_stop);
+  _drive_stop();
 }
 
 void Tank::turret_calibrate() {
@@ -266,9 +282,10 @@ void Tank::turret_calibrate() {
   _turret_status.calibrated = false;
 
   turret_left();
-  while (!_turret_status.calibrated) {
+
+  do {
     loop();
-  }
+  } while (!_turret_status.calibrated);
 
   turret_stop();
 #ifdef TANK_DEBUG_OUTPUT
@@ -475,7 +492,7 @@ void Tank::_process_encoder_flags(unsigned long current_millis) {
     _check_turret_target();
 #ifdef TANK_DEBUG_OUTPUT
     if (_turret_status.encoder_count % 10 == 0) {
-      Serial.print("encoder_count: ");
+      Serial.print("turret encoder_count: ");
       Serial.println(_turret_status.encoder_count);
     }
 #endif
@@ -575,9 +592,18 @@ void Tank::_process_ir_flags() {
 // note that this function does not reset drive target distance/degrees variables. whereas public drive functions do
 // reset these variables.
 void Tank::_drive(const MotorDirection left_direction, const MotorDirection right_direction, const uint8_t speed) {
+  Serial.print("tank drive: ");
+  Serial.print(left_direction);
+  Serial.print(" ");
+  Serial.println(right_direction);
+
   _requested_speed = speed;
   _control_motor(_left_motor_status, left_direction);
   _control_motor(_right_motor_status, right_direction);
+}
+
+void Tank::_drive_stop() {
+  _drive(motor_stop, motor_stop, 0);
 }
 
 void Tank::_check_drive_targets() {
@@ -601,7 +627,7 @@ void Tank::_check_drive_distance_target() {
         Serial.println(F("Drive distance target reached"));
 #endif
         _tank_status.drive_target_distance_reached = true;
-        _tank_status.drive_target_distance = 0;
+        _drive_stop();
         if (_drive_target_callback) {
           _drive_target_callback();
         }
@@ -612,20 +638,20 @@ void Tank::_check_drive_distance_target() {
 
 void Tank::_check_drive_turn_target() {
   // check if there exists a drive turn (degrees) target
-  if (_tank_status.drive_target_degrees != 0) {
+  if (_tank_status.drive_target_degrees != -1) {
     if (
       // if target degrees are less than zero, we are turning left.
-      (_tank_status.drive_target_degrees < 0 
+      (_tank_status.drive_target_degrees < 0
         && _tank_status.wheel_encoder_count_left - _tank_status.wheel_encoder_count_right < _tank_status.drive_target_degrees * WHEEL_ENCODER_TURN_RATIO)
       ||
-      (_tank_status.drive_target_degrees > 0 
+      (_tank_status.drive_target_degrees > 0
         && _tank_status.wheel_encoder_count_left - _tank_status.wheel_encoder_count_right > _tank_status.drive_target_degrees * WHEEL_ENCODER_TURN_RATIO)
     ) {
 #ifdef TANK_DEBUG_OUTPUT
         Serial.println(F("Drive degrees target reached"));
 #endif
         _tank_status.drive_target_degrees_reached = true;
-        _tank_status.drive_target_degrees = 0;
+        _drive_stop();
         if (_drive_target_callback) {
           _drive_target_callback();
         }
@@ -649,6 +675,5 @@ void Tank::_turret_target_reached() {
   if (_turret_status.target_callback) {
     _turret_status.target_callback();
   }
-  _turret_status.has_target = false;
   _turret_status.target_callback = NULL;
 }

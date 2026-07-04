@@ -1,4 +1,6 @@
 - calibrate WHEEL_ENCODER_DISTANCE_RATIO
 - if one drive motor is in wait mode, the other drive motor should probably also wait. the effects of the lag can be most easily demonstrated with the motor_stress_test.
-- make some kinda heartbeat LED
+- make some kinda heartbeat LED (or, could be better to just add an always-on power LED)
 - implement "game" logic like hit count, shot delay, etc.
+- look into why LED pins seem to be incorrect
+- maybe make degrees be from 1-360, that way target sentinels could match

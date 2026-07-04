@@ -212,17 +212,17 @@ void led_test()
       break;
     case IR_CODE_LEFT:
       tank_led.all_off();
-      tank_led.turn_on(0);
+      tank_led.on(0);
       last_ir_command = 0;
       break;
     case IR_CODE_DOWN:
       tank_led.all_off();
-      tank_led.turn_on(1);
+      tank_led.on(1);
       last_ir_command = 0;
       break;
     case IR_CODE_RIGHT:
       tank_led.all_off();
-      tank_led.turn_on(2);
+      tank_led.on(2);
       last_ir_command = 0;
       break;
     case IR_CODE_OK:
@@ -247,10 +247,10 @@ void distance_sensor_test()
       if (distance <= 250) {
         tank_led.all_on();
       } else if (distance > 250 && distance <= 750) {
-        tank_led.turn_on(0);
-        tank_led.turn_on(1);
+        tank_led.on(0);
+        tank_led.on(1);
       } else {
-        tank_led.turn_on(0);
+        tank_led.on(0);
       }
     } else {
       tank_led.all_off();

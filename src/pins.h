@@ -2,9 +2,9 @@
 #define BUMP_PIN_REAR 17
 #define IR_RX_PIN 3
 #define IR_TX_PIN 15
-#define LED_PIN_1 9
+#define LED_PIN_1 6
 #define LED_PIN_2 14
-#define LED_PIN_3 6
+#define LED_PIN_3 9
 #define MOTOR_PWM_PIN 5
 #define SHIFT_CLEAR_PIN 13
 #define SHIFT_CLOCK_PIN 12

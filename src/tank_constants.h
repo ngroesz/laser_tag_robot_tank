@@ -4,7 +4,7 @@
 // there are Serial.print statements scattered throughout the Tank class.
 // you will see them if you have initialized Serial and you are connected to the tank.
 // removing this flag will quiet them.
-#define TANK_DEBUG_OUTPUT
+//#define TANK_DEBUG_OUTPUT
 
 // the piezo speaker is annoying, if you do not want to hear it during development then comment-out this flag
 #define SOUND_ENABLED

@@ -13,12 +13,12 @@ enum LedState {
 };
 
 struct Led {
-    uint8_t led_pin;
-    LedState state;
-    uint8_t blink_count;
-    uint16_t blinks[MAX_BLINK_COUNT];
-    uint8_t current_blink_index;
-    unsigned long next_blink_change;
+  uint8_t led_pin;
+  LedState state;
+  uint8_t blink_count;
+  uint16_t blinks[MAX_BLINK_COUNT];
+  uint8_t current_blink_index;
+  unsigned long next_blink_change;
 };
 
 class TankLed

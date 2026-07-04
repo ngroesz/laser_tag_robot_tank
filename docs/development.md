@@ -10,10 +10,21 @@ Of course, you need the Arduino software. Make sure you have a recent version. A
 ### Library Requirements:
 Besides the core Arduino library, you will need some additional libraries. You can install these via the Arduino library manager.
 
+As of last writing, here are the versions according to my arduino-cli output:
+Used library       Version
+IRremote           4.4.2
+PinChangeInterrupt 1.2.8
+PVision            0.0.4
+VL53L0X            1.3.1
+Wire               1.0
+
+
+Here are where to find those libraries:
  - IRMP (https://github.com/IRMP-org/IRMP)
  - PinChangeInterrupt (https://github.com/NicoHood/PinChangeInterrupt)
  - PVision (https://github.com/omwah/PVision)
- - VL53L0X (https://github.com/pololu/vl53l0x-arduino) *Note that I have been using cheap, knockoff ToF sensors sourced from Amazon.com but this library has worked fine for me.
+ - VL53L0X (https://github.com/pololu/vl53l0x-arduino) *Note that I have been using cheap, knockoff ToF sensors sourced from Amazon.com but this library has worked fine for me.*
+ - Wire - Should be part of the Arduino core libraries.
 
 ### Optional Devtools:
   I do not like the Arduino IDE so I use arduino-cli to build and upload software to the tank.
@@ -46,7 +57,8 @@ ln -sf ./sketches/motor_strain_test.ino sketch.ino
 
 I use Doxygen to automatically generate documentation. You can use a web browser to view the documentation
 contained in this repo at [doxygen/html/index.html](doxygen/html/index.html). You will be most interested
-in the Tank class, as the entrypoint for your code.
+in the Tank class, as the entrypoint for your code. I am currently working on adding better comments to
+the library code.
 
 ## Coding the LTRT
 
@@ -79,7 +91,7 @@ what is happening and make the robot do what you want.
 
 #### Coding Without Delay
 
-The delay() function pauses all execution on the Arduino. You must NEVER use this function in the main code
+The delay() function pauses all execution on the Arduino. You should NEVER use this function in the main code
 of your robot. It is okay to use it the setup() function. Using delay() will cause the rest of the robot to
 not work correctly, as it relies on the tank.loop() function being called continuously.
 
@@ -87,7 +99,7 @@ Instead you must use variables to keep track of time and state, such that you ca
 of time to pass between actions. You can do a web-search for "arduino coding without delay" for a lot more
 information on this subject.
 
-### Your Bot
+### Your Own Bot
 
 In order to create your own robot, you will create a new sketch and you will use the Tank class in order to
 control the robot. If you want, you can use the dumb_bot.ino sketch as a starting point. This sketch does
@@ -116,3 +128,64 @@ void loop()
 }
 ```
 
+Look at the empty_bot.ino sketch if you want a good starting point.
+
+### Common Pitfalls
+
+#### Variable Types
+
+You have to pay attention to variable types. I had a confusing bug the cause of which I was dividing
+an integer with another integer and expecting a float in return. In the end I needed to do something
+like:
+```
+return (float)integer_1 / integer_2;
+```
+
+### Upload Issues
+
+Sometimes, when attempting to upload a new sketch, you might get an error like:
+
+```
+avrdude: stk500_recv(): programmer is not responding
+avrdude: stk500_getsync() attempt 1 of 10: not in sync: resp=0x00
+...
+```
+
+This happens even though the FTDI board is plugged into the programming header of LTRT. I'm not sure
+exactly the cause, just like the Arduino brain is firing away and can't be stopped even though the
+reset pin is being pulled to a low state.
+
+Anyway, this can usually be fixed by unplugging and plugging back in the FTDI cable or by cycling the
+power of the LTRT (unplugging the FTDI cable and turning the batteries off).
+
+### Debugging
+
+Sometimes the robot does not do what you want it to do and it is difficult to determine why. One way
+to find the problem is to add debugging statements throughout the code. Some typical debug statement
+for me will look like:
+
+```
+Serial.print("Value of current_degrees: ");
+Serial.println(current_degrees);
+```
+
+Note that in the above Serial statements I am not using the F() macro. This means that my print strings
+are taking up global variable space, which is fairly limited. However, I am adding these debug statements
+just to track down some coding error I made and I intend to remove them once I find the problem.
+
+Of course, printing these debug statements for every loop iteration will make for a gigantic log and might
+even freeze communication through the FTDI. So will need to limit these print statements to every so often
+(see section "Coding Without Delay", above).
+
+Since I am using Linux, my debugging commands look something like:
+
+```
+> make upload
+> screen -L /dev/ttyUSB0 115200
+```
+
+The above commands compile and upload a new version of the tank code. The screen command attaches my terminal
+to the debugging output from the LTRT. The screen command with the -L flag will write-out a log file (named
+something like screenlog.0). /dev/ttyUSB0 is the port (this might change based upon what USB devices are active
+when you connect the LTRT). 115200 is the bits-per-second and this matches
+a hardcoded value in my tank sketch.

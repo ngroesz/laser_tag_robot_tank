@@ -16,7 +16,7 @@
 #include <Wire.h>
 
 typedef void (*CallbackFunction) ();
-typedef void (*CallbackFunctionWithInt) (int);
+typedef void (*CallbackFunctionWithInt) (uint16_t);
 
 // TODO: are these definitions necessary?
 /* begin global routines */
@@ -79,8 +79,10 @@ struct TankStatus {
   int16_t wheel_encoder_count_left = 0;
   int16_t wheel_encoder_count_right = 0;
   // drive_target_distance has a sentinel value of 0, meaning that there is no drive-target
-  uint16_t drive_target_distance = 0;
-  int8_t drive_target_degrees = 0;
+  int16_t drive_target_distance = 0;
+  // drive_target_degrees has a sentinel value of -1, meaning that there is no drive-target
+  // possible TODO: both drive_target_distance and drive_target_degrees could have same sentinel value of 0, if i change degree representation to be 1-360, instead of 0-359
+  int16_t drive_target_degrees = -1;
 };
 
 class Tank
@@ -94,16 +96,19 @@ class Tank
 
     void set_bump_front_callback(CallbackFunction);
     void set_bump_rear_callback(CallbackFunction);
+    // Note that set_ir_command_callback is useful for development purposes but you should not have to use this function for normal gameplay
     void set_ir_command_callback(CallbackFunctionWithInt);
 
     void drive_forward(const uint8_t speed = MOTOR_DEFAULT_SPEED);
+    // TODO: could consider to make whether tank stops at target an optional flag
     void drive_forward_target(const int16_t target_distance, CallbackFunction target_callback, const uint8_t speed = MOTOR_DEFAULT_SPEED);
     void drive_reverse(const uint8_t speed = MOTOR_DEFAULT_SPEED);
     void drive_reverse_target(const int16_t target_distance, CallbackFunction target_callback, const uint8_t speed = MOTOR_DEFAULT_SPEED);
     void drive_turn_left(const uint8_t speed = MOTOR_DEFAULT_SPEED);
     void drive_turn_right(const uint8_t speed = MOTOR_DEFAULT_SPEED);
-    void drive_turn_left_degrees(int8_t degrees, CallbackFunction target_callback, const uint8_t speed = MOTOR_DEFAULT_SPEED);
-    void drive_turn_right_degrees(int8_t degrees, CallbackFunction target_callback, const uint8_t speed = MOTOR_DEFAULT_SPEED);
+    void drive_turn_degrees(int16_t degrees, CallbackFunction target_callback = NULL, const uint8_t speed = MOTOR_DEFAULT_SPEED);
+    void drive_turn_left_degrees(int16_t degrees, CallbackFunction target_callback, const uint8_t speed = MOTOR_DEFAULT_SPEED);
+    void drive_turn_right_degrees(int16_t degrees, CallbackFunction target_callback, const uint8_t speed = MOTOR_DEFAULT_SPEED);
     void drive_stop();
 
     void turret_calibrate();
@@ -133,6 +138,7 @@ class Tank
     void _process_ir_flags();
 
     void _drive(const MotorDirection left_direction, const MotorDirection right_direction, const uint8_t speed = MOTOR_DEFAULT_SPEED);
+    void _drive_stop();
     void _check_drive_targets();
     void _check_drive_distance_target();
     void _check_drive_turn_target();

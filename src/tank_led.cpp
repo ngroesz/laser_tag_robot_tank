@@ -49,11 +49,11 @@ void TankLed::all_off()
 
 void TankLed::set_blinks(uint8_t led_index, const uint16_t blinks[], const uint8_t blink_count)
 {
-  Led led_to_update = _leds[led_index];
+  Led& led_to_update = _leds[led_index];
 
   led_to_update.state = led_blinking;
-  led_to_update.blink_count = blink_count > 10 ? 10 : blink_count;
-  for (uint8_t i = 0; i <= led_to_update.blink_count; ++i) {
+  led_to_update.blink_count = blink_count > MAX_BLINK_COUNT ? MAX_BLINK_COUNT : blink_count;
+  for (uint8_t i = 0; i < led_to_update.blink_count; ++i) {
     led_to_update.blinks[i] = blinks[i];
   }
   led_to_update.current_blink_index = -1;
