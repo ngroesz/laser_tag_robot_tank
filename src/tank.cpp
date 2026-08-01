@@ -48,13 +48,6 @@ Tank::Tank()
   _current_motor_control_code = 0;
 }
 
-/**
-* initialize - initializes Tank
-*
-* Does a bunch of stuff to initialize the tank. This needs to be called in
-* the beginning of your program, probably from the setup() routine.
-* The tank probably will not do anything useful until this function is called.
-*/
 void Tank::initialize()
 {
 #ifdef TANK_DEBUG_OUTPUT

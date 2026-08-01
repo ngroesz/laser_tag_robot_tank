@@ -7,5 +7,5 @@ PORT = "/dev/ttyUSB0"
 compile:
 	/usr/local/bin/arduino-cli compile -b $(BOARD) $(PATH)
 
-upload:
+upload: compile
 	/usr/local/bin/arduino-cli upload -b $(BOARD) -p $(PORT) $(PATH)

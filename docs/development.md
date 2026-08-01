@@ -50,7 +50,7 @@ run at the time.
 
 For instance, to use sketch called "motor_strain_test.ino":
 ```
-ln -sf ./sketches/motor_strain_test.ino sketch.ino
+ln -sf ./sketches/motor_strain_test.ino laser_tag_robot_tank.ino
 ```
 
 ## Code Documentation
@@ -129,6 +129,30 @@ void loop()
 ```
 
 Look at the empty_bot.ino sketch if you want a good starting point.
+
+### Limited Space
+
+The ATmega328p boasts 32,256 bytes of flash memory and 2,048 bytes of SRAM. This memory can be taken
+up fairly quickly so you'll have to program conservatively. As of this writing, an empty sketch that
+includes all the libraries but doesn't in itself do anything at all takes up 8606/32256 byes of program
+space and 634/2048 bytes SRAM. This leaves 23,650 and 1,414 bytes, respectively. That is all the 
+space you have left to make your robot the most intelligent and deadliest of all. Expect these numbers to
+change slightly as I flesh-out the Tank library. But it is nearly complete so I don't expect to consume
+much more space.
+
+One simple trick, if you're running out of the very-limited SRAM, is to use the F() macro with your
+print statements.
+
+Instead of:
+```
+Serial.println("Robot initialized.");
+```
+Do this:
+```
+Serial.println("Robot initialized.");
+```
+
+The F() macro causes strings to be stored in the flash memory space, instead of SRAM.
 
 ### Common Pitfalls
 

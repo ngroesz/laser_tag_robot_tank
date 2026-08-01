@@ -4,3 +4,4 @@
 - implement "game" logic like hit count, shot delay, etc.
 - look into why LED pins seem to be incorrect
 - maybe make degrees be from 1-360, that way target sentinels could match
+- look at clang-format for comment formatting

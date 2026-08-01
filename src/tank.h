@@ -90,8 +90,20 @@ class Tank
   public:
     Tank();
 
+    /// @brief Initializes the tank by setting input/output pins, initializing variables, etc. MUST be called before anything else is done within the Tank library.
+    /// This should probably be called sometime during your setup() function.
     void initialize();
+
+    /// @brief Waits for OK signal, calibrates the turret, and then waits for OK signal again.
+    /// The idea is that, for any game-playing robot, to call this at the end of your setup() function.
+    /// Once setup_routine() returns, the turret will have been calibrated and the tank will have been given the go-ahead.
+    /// It isn't necessary to use this during development. If you just need the turret to be calibrated, you can call
+    /// turret_calibrate instead.
     void setup_routine();
+
+    /// @brief Updates the tank. Must be called continuously.
+    /// This function must be called in order for the tank to do anything and for it to update its own state.
+    /// This function should be called from your own bot's loop() function.
     void loop();
 
     void set_bump_front_callback(CallbackFunction);
@@ -127,6 +139,7 @@ class Tank
 
     TankStatus get_status();
 
+    // TODO: maybe I move this to a utility file?
     const int16_t normalize_angle(const int16_t degrees);
 
     TankLed _tank_led;

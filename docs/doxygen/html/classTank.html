@@ -63,106 +63,124 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="classTank-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">Tank Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
+<div class="dynheader">
+Collaboration diagram for Tank:</div>
+<div class="dyncontent">
+<div class="center"><img src="classTank__coll__graph.png" border="0" usemap="#aTank_coll__map" alt="Collaboration graph"/></div>
+<map name="aTank_coll__map" id="aTank_coll__map">
+<area shape="rect" title=" " alt="" coords="17,95,69,121"/>
+<area shape="rect" href="classTankLed.html" title=" " alt="" coords="5,5,80,32"/>
+</map>
+<center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a5f40dbdf028c9670b96feb4902ebdff0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTank.html#a5f40dbdf028c9670b96feb4902ebdff0">initialize</a> ()</td></tr>
+<tr class="memitem:a5f40dbdf028c9670b96feb4902ebdff0"><td class="memItemLeft" align="right" valign="top"><a id="a5f40dbdf028c9670b96feb4902ebdff0"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTank.html#a5f40dbdf028c9670b96feb4902ebdff0">initialize</a> ()</td></tr>
+<tr class="memdesc:a5f40dbdf028c9670b96feb4902ebdff0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes the tank by setting input/output pins, initializing variables, etc. MUST be called before anything else is done within the <a class="el" href="classTank.html">Tank</a> library. This should probably be called sometime during your setup() function. <br /></td></tr>
 <tr class="separator:a5f40dbdf028c9670b96feb4902ebdff0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af094f23f4a2029889897fd7d8f0b2241"><td class="memItemLeft" align="right" valign="top"><a id="af094f23f4a2029889897fd7d8f0b2241"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTank.html#af094f23f4a2029889897fd7d8f0b2241">setup_routine</a> ()</td></tr>
+<tr class="memdesc:af094f23f4a2029889897fd7d8f0b2241"><td class="mdescLeft">&#160;</td><td class="mdescRight">Waits for OK signal, calibrates the turret, and then waits for OK signal again. The idea is that, for any game-playing robot, to call this at the end of your setup() function. Once <a class="el" href="classTank.html#af094f23f4a2029889897fd7d8f0b2241" title="Waits for OK signal, calibrates the turret, and then waits for OK signal again. The idea is that,...">setup_routine()</a> returns, the turret will have been calibrated and the tank will have been given the go-ahead. It isn't necessary to use this during development. If you just need the turret to be calibrated, you can call turret_calibrate instead. <br /></td></tr>
+<tr class="separator:af094f23f4a2029889897fd7d8f0b2241"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7f4deb6d621dff626ca12eecdd83dcc6"><td class="memItemLeft" align="right" valign="top"><a id="a7f4deb6d621dff626ca12eecdd83dcc6"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>loop</b> ()</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTank.html#a7f4deb6d621dff626ca12eecdd83dcc6">loop</a> ()</td></tr>
+<tr class="memdesc:a7f4deb6d621dff626ca12eecdd83dcc6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates the tank. Must be called continuously. This function must be called in order for the tank to do anything and for it to update its own state. This function should be called from your own bot's <a class="el" href="classTank.html#a7f4deb6d621dff626ca12eecdd83dcc6" title="Updates the tank. Must be called continuously. This function must be called in order for the tank to ...">loop()</a> function. <br /></td></tr>
 <tr class="separator:a7f4deb6d621dff626ca12eecdd83dcc6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaecfc4599cc7ef9f4d81eebb7037c9b8"><td class="memItemLeft" align="right" valign="top"><a id="aaecfc4599cc7ef9f4d81eebb7037c9b8"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_bump_front_callback</b> (CallbackFunction)</td></tr>
 <tr class="separator:aaecfc4599cc7ef9f4d81eebb7037c9b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeafd6fe6187f9770e0ac8c871a678b33"><td class="memItemLeft" align="right" valign="top"><a id="aeafd6fe6187f9770e0ac8c871a678b33"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_bump_rear_callback</b> (CallbackFunction)</td></tr>
+<tr class="separator:aeafd6fe6187f9770e0ac8c871a678b33"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae7a99592a1b1122a1c0ae3b6b700a160"><td class="memItemLeft" align="right" valign="top"><a id="ae7a99592a1b1122a1c0ae3b6b700a160"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_ir_command_callback</b> (CallbackFunctionWithInt)</td></tr>
 <tr class="separator:ae7a99592a1b1122a1c0ae3b6b700a160"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9bdffc0de892fc8a166c7c5717700a88"><td class="memItemLeft" align="right" valign="top"><a id="a9bdffc0de892fc8a166c7c5717700a88"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>drive</b> (const MotorDirection left_direction, const MotorDirection right_direction, const uint8_t left_speed=MOTOR_DEFAULT_SPEED, const uint8_t right_speed=MOTOR_DEFAULT_SPEED)</td></tr>
-<tr class="separator:a9bdffc0de892fc8a166c7c5717700a88"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af8ee18a0e4c1a951f84225c7092f6be4"><td class="memItemLeft" align="right" valign="top"><a id="af8ee18a0e4c1a951f84225c7092f6be4"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>drive_forward</b> (const uint8_t left_speed=MOTOR_DEFAULT_SPEED, const uint8_t right_speed=MOTOR_DEFAULT_SPEED)</td></tr>
-<tr class="separator:af8ee18a0e4c1a951f84225c7092f6be4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a939409775c9afa6dbaec68ba7adf3085"><td class="memItemLeft" align="right" valign="top"><a id="a939409775c9afa6dbaec68ba7adf3085"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>drive_reverse</b> (const uint8_t left_speed=MOTOR_DEFAULT_SPEED, const uint8_t right_speed=MOTOR_DEFAULT_SPEED)</td></tr>
-<tr class="separator:a939409775c9afa6dbaec68ba7adf3085"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1885e20e618819fd8de6075399e6e7ac"><td class="memItemLeft" align="right" valign="top"><a id="a1885e20e618819fd8de6075399e6e7ac"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>drive_reverse_target</b> (const int16_t target_distance, CallbackFunction target_callback, const uint8_t left_speed=MOTOR_DEFAULT_SPEED, const uint8_t right_speed=MOTOR_DEFAULT_SPEED)</td></tr>
-<tr class="separator:a1885e20e618819fd8de6075399e6e7ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a387db8c7fd4e4050d843e12b470fab3c"><td class="memItemLeft" align="right" valign="top"><a id="a387db8c7fd4e4050d843e12b470fab3c"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>drive_turn_left</b> (const uint8_t left_speed=MOTOR_DEFAULT_SPEED, const uint8_t right_speed=MOTOR_DEFAULT_SPEED)</td></tr>
-<tr class="separator:a387db8c7fd4e4050d843e12b470fab3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac1f3f04c035bf480e9882808ae124ed6"><td class="memItemLeft" align="right" valign="top"><a id="ac1f3f04c035bf480e9882808ae124ed6"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>drive_turn_right</b> (const uint8_t left_speed=MOTOR_DEFAULT_SPEED, const uint8_t right_speed=MOTOR_DEFAULT_SPEED)</td></tr>
-<tr class="separator:ac1f3f04c035bf480e9882808ae124ed6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a83249a8ba4089860bdde3c2951618d6c"><td class="memItemLeft" align="right" valign="top"><a id="a83249a8ba4089860bdde3c2951618d6c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>drive_forward</b> (const uint8_t speed=MOTOR_DEFAULT_SPEED)</td></tr>
+<tr class="separator:a83249a8ba4089860bdde3c2951618d6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7be3a6e8dad6cc6e9e1e13f4b815cbbd"><td class="memItemLeft" align="right" valign="top"><a id="a7be3a6e8dad6cc6e9e1e13f4b815cbbd"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>drive_forward_target</b> (const int16_t target_distance, CallbackFunction target_callback, const uint8_t speed=MOTOR_DEFAULT_SPEED)</td></tr>
+<tr class="separator:a7be3a6e8dad6cc6e9e1e13f4b815cbbd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3a940da791cc0e31e20fbcc2aa0cb83a"><td class="memItemLeft" align="right" valign="top"><a id="a3a940da791cc0e31e20fbcc2aa0cb83a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>drive_reverse</b> (const uint8_t speed=MOTOR_DEFAULT_SPEED)</td></tr>
+<tr class="separator:a3a940da791cc0e31e20fbcc2aa0cb83a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7510a03c8c4ea03b58eae69bc3422c1b"><td class="memItemLeft" align="right" valign="top"><a id="a7510a03c8c4ea03b58eae69bc3422c1b"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>drive_reverse_target</b> (const int16_t target_distance, CallbackFunction target_callback, const uint8_t speed=MOTOR_DEFAULT_SPEED)</td></tr>
+<tr class="separator:a7510a03c8c4ea03b58eae69bc3422c1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa3fbb434020ecf7d0828c9eb804fa7e3"><td class="memItemLeft" align="right" valign="top"><a id="aa3fbb434020ecf7d0828c9eb804fa7e3"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>drive_turn_left</b> (const uint8_t speed=MOTOR_DEFAULT_SPEED)</td></tr>
+<tr class="separator:aa3fbb434020ecf7d0828c9eb804fa7e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a31f2b9232bd3e9c81271fddaee5a7e79"><td class="memItemLeft" align="right" valign="top"><a id="a31f2b9232bd3e9c81271fddaee5a7e79"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>drive_turn_right</b> (const uint8_t speed=MOTOR_DEFAULT_SPEED)</td></tr>
+<tr class="separator:a31f2b9232bd3e9c81271fddaee5a7e79"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a240aa142a1176aa8a81ce047f6ae6e6b"><td class="memItemLeft" align="right" valign="top"><a id="a240aa142a1176aa8a81ce047f6ae6e6b"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>drive_turn_degrees</b> (int16_t degrees, CallbackFunction target_callback=NULL, const uint8_t speed=MOTOR_DEFAULT_SPEED)</td></tr>
+<tr class="separator:a240aa142a1176aa8a81ce047f6ae6e6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5ca3de54d385d36f9129f443a9471024"><td class="memItemLeft" align="right" valign="top"><a id="a5ca3de54d385d36f9129f443a9471024"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>drive_turn_left_degrees</b> (int16_t degrees, CallbackFunction target_callback, const uint8_t speed=MOTOR_DEFAULT_SPEED)</td></tr>
+<tr class="separator:a5ca3de54d385d36f9129f443a9471024"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af79a3943737bb8ba74ab094e8c3ac025"><td class="memItemLeft" align="right" valign="top"><a id="af79a3943737bb8ba74ab094e8c3ac025"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>drive_turn_right_degrees</b> (int16_t degrees, CallbackFunction target_callback, const uint8_t speed=MOTOR_DEFAULT_SPEED)</td></tr>
+<tr class="separator:af79a3943737bb8ba74ab094e8c3ac025"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac95247a61e076221a7656255285ef85f"><td class="memItemLeft" align="right" valign="top"><a id="ac95247a61e076221a7656255285ef85f"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>drive_stop</b> ()</td></tr>
 <tr class="separator:ac95247a61e076221a7656255285ef85f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa52065ae8eb808f4717a97187e0931f7"><td class="memItemLeft" align="right" valign="top"><a id="aa52065ae8eb808f4717a97187e0931f7"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>turret_calibrate</b> (const uint8_t speed=MOTOR_DEFAULT_SPEED)</td></tr>
-<tr class="separator:aa52065ae8eb808f4717a97187e0931f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad77b9c2d5a63b19f39a69862b298b1b4"><td class="memItemLeft" align="right" valign="top"><a id="ad77b9c2d5a63b19f39a69862b298b1b4"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>turret_left</b> (const uint8_t speed=MOTOR_DEFAULT_SPEED)</td></tr>
-<tr class="separator:ad77b9c2d5a63b19f39a69862b298b1b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a25df70aa196b940b35bf2c4c4df54924"><td class="memItemLeft" align="right" valign="top"><a id="a25df70aa196b940b35bf2c4c4df54924"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>turret_right</b> (const uint8_t speed=MOTOR_DEFAULT_SPEED)</td></tr>
-<tr class="separator:a25df70aa196b940b35bf2c4c4df54924"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3f25a4a58375cff84b6a2efe1ca26078"><td class="memItemLeft" align="right" valign="top"><a id="a3f25a4a58375cff84b6a2efe1ca26078"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>turret_left_degrees</b> (const uint16_t degrees, const uint8_t speed=MOTOR_DEFAULT_SPEED)</td></tr>
-<tr class="separator:a3f25a4a58375cff84b6a2efe1ca26078"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7ef6121e6cd05e5f9cb4fc4d5a59243a"><td class="memItemLeft" align="right" valign="top"><a id="a7ef6121e6cd05e5f9cb4fc4d5a59243a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>turret_right_degrees</b> (const uint16_t degrees, const uint8_t speed=MOTOR_DEFAULT_SPEED)</td></tr>
-<tr class="separator:a7ef6121e6cd05e5f9cb4fc4d5a59243a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a458c96f2a2aa0cb76c84fe1a582a8295"><td class="memItemLeft" align="right" valign="top"><a id="a458c96f2a2aa0cb76c84fe1a582a8295"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>turret_left_degrees</b> (const uint16_t degrees, CallbackFunction target_callback, const uint8_t speed=MOTOR_DEFAULT_SPEED)</td></tr>
-<tr class="separator:a458c96f2a2aa0cb76c84fe1a582a8295"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae0c5694902ef71d98088bf7e0900017b"><td class="memItemLeft" align="right" valign="top"><a id="ae0c5694902ef71d98088bf7e0900017b"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>turret_right_degrees</b> (const uint16_t degrees, CallbackFunction target_callback, const uint8_t speed=MOTOR_DEFAULT_SPEED)</td></tr>
-<tr class="separator:ae0c5694902ef71d98088bf7e0900017b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad4a081e30702c93f5dec7a84ec26d2a2"><td class="memItemLeft" align="right" valign="top"><a id="ad4a081e30702c93f5dec7a84ec26d2a2"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>turret_set_degrees</b> (const uint16_t target_degrees, const uint8_t speed=MOTOR_DEFAULT_SPEED)</td></tr>
-<tr class="separator:ad4a081e30702c93f5dec7a84ec26d2a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a905ebf68d2837ebcc97ea2370ed758df"><td class="memItemLeft" align="right" valign="top"><a id="a905ebf68d2837ebcc97ea2370ed758df"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>turret_set_degrees</b> (const uint16_t target_degrees, CallbackFunction target_callback, const uint8_t speed=MOTOR_DEFAULT_SPEED)</td></tr>
-<tr class="separator:a905ebf68d2837ebcc97ea2370ed758df"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac850bea83b566160b4f521d4c7f4d24a"><td class="memItemLeft" align="right" valign="top"><a id="ac850bea83b566160b4f521d4c7f4d24a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>turret_calibrate</b> ()</td></tr>
+<tr class="separator:ac850bea83b566160b4f521d4c7f4d24a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1b3b6ce00ff8bde31b546f8d29c7f79a"><td class="memItemLeft" align="right" valign="top"><a id="a1b3b6ce00ff8bde31b546f8d29c7f79a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>turret_left</b> ()</td></tr>
+<tr class="separator:a1b3b6ce00ff8bde31b546f8d29c7f79a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a508a0ca1ddfd5894b73462bfbce97f92"><td class="memItemLeft" align="right" valign="top"><a id="a508a0ca1ddfd5894b73462bfbce97f92"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>turret_right</b> ()</td></tr>
+<tr class="separator:a508a0ca1ddfd5894b73462bfbce97f92"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0271b60438563a68cc6de8fe101a2ead"><td class="memItemLeft" align="right" valign="top"><a id="a0271b60438563a68cc6de8fe101a2ead"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>turret_left_degrees</b> (const uint16_t degrees)</td></tr>
+<tr class="separator:a0271b60438563a68cc6de8fe101a2ead"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa40604774e28becf5bbe9cf4236a7e28"><td class="memItemLeft" align="right" valign="top"><a id="aa40604774e28becf5bbe9cf4236a7e28"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>turret_right_degrees</b> (const uint16_t degrees)</td></tr>
+<tr class="separator:aa40604774e28becf5bbe9cf4236a7e28"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0bb274c6e0cc3a3ff220fe27e0c58797"><td class="memItemLeft" align="right" valign="top"><a id="a0bb274c6e0cc3a3ff220fe27e0c58797"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>turret_left_degrees</b> (const uint16_t degrees, CallbackFunction target_callback)</td></tr>
+<tr class="separator:a0bb274c6e0cc3a3ff220fe27e0c58797"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe6682cb572196db79f9da5f6db20d1b"><td class="memItemLeft" align="right" valign="top"><a id="abe6682cb572196db79f9da5f6db20d1b"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>turret_right_degrees</b> (const uint16_t degrees, CallbackFunction target_callback)</td></tr>
+<tr class="separator:abe6682cb572196db79f9da5f6db20d1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7bcddde1aeb76f1b7e0c13c113d12dc6"><td class="memItemLeft" align="right" valign="top"><a id="a7bcddde1aeb76f1b7e0c13c113d12dc6"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>turret_set_degrees</b> (const uint16_t target_degrees)</td></tr>
+<tr class="separator:a7bcddde1aeb76f1b7e0c13c113d12dc6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a81764d981212acf79e494eac07de727a"><td class="memItemLeft" align="right" valign="top"><a id="a81764d981212acf79e494eac07de727a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>turret_set_degrees</b> (const uint16_t target_degrees, CallbackFunction target_callback)</td></tr>
+<tr class="separator:a81764d981212acf79e494eac07de727a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5ab578a95a0259c4c5ad69b7543bb1e1"><td class="memItemLeft" align="right" valign="top"><a id="a5ab578a95a0259c4c5ad69b7543bb1e1"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>turret_stop</b> ()</td></tr>
 <tr class="separator:a5ab578a95a0259c4c5ad69b7543bb1e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3f7a34202c34145762957d35af010d48"><td class="memItemLeft" align="right" valign="top"><a id="a3f7a34202c34145762957d35af010d48"></a>
 const int16_t&#160;</td><td class="memItemRight" valign="bottom"><b>turret_get_degrees</b> ()</td></tr>
 <tr class="separator:a3f7a34202c34145762957d35af010d48"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2f9b4b410e23062995649ac8bbd4a0aa"><td class="memItemLeft" align="right" valign="top"><a id="a2f9b4b410e23062995649ac8bbd4a0aa"></a>
+const bool&#160;</td><td class="memItemRight" valign="bottom"><b>turret_has_been_calibrated</b> ()</td></tr>
+<tr class="separator:a2f9b4b410e23062995649ac8bbd4a0aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac2ab9b9ba218be8523f69f911861f674"><td class="memItemLeft" align="right" valign="top"><a id="ac2ab9b9ba218be8523f69f911861f674"></a>
 <a class="el" href="structTankStatus.html">TankStatus</a>&#160;</td><td class="memItemRight" valign="bottom"><b>get_status</b> ()</td></tr>
 <tr class="separator:ac2ab9b9ba218be8523f69f911861f674"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af5f44042883a7f0dff926c99c7fed154"><td class="memItemLeft" align="right" valign="top"><a id="af5f44042883a7f0dff926c99c7fed154"></a>
 const int16_t&#160;</td><td class="memItemRight" valign="bottom"><b>normalize_angle</b> (const int16_t degrees)</td></tr>
 <tr class="separator:af5f44042883a7f0dff926c99c7fed154"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a2ca70847be28217cb1505bf8623a35f0"><td class="memItemLeft" align="right" valign="top"><a id="a2ca70847be28217cb1505bf8623a35f0"></a>
+<a class="el" href="classTankLed.html">TankLed</a>&#160;</td><td class="memItemRight" valign="bottom"><b>_tank_led</b></td></tr>
+<tr class="separator:a2ca70847be28217cb1505bf8623a35f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a5f40dbdf028c9670b96feb4902ebdff0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5f40dbdf028c9670b96feb4902ebdff0">&#9670;&nbsp;</a></span>initialize()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Tank::initialize </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>initialize - initializes <a class="el" href="classTank.html">Tank</a></p>
-<p>Does a bunch of stuff to initialize the tank. This needs to be called in the beginning of your program, probably from the setup() routine. The tank will not do anything useful until this function is called. </p>
-
-</div>
-</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>src/<a class="el" href="tank_8h_source.html">tank.h</a></li>
 <li>src/tank.cpp</li>

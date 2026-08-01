@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.9.1"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Laser Tag Robot Tank: Member List</title>
+<title>Laser Tag Robot Tank: Led Struct Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -61,21 +61,39 @@ $(function() {
 
 </div><!-- top -->
 <div class="header">
+  <div class="summary">
+<a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="structLed-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">TankLED Member List</div>  </div>
+<div class="title">Led Struct Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-
-<p>This is the complete list of members for <a class="el" href="classTankLED.html">TankLED</a>, including all inherited members.</p>
-<table class="directory">
-  <tr bgcolor="#f0f0f0" class="even"><td class="entry"><b>all_off</b>() (defined in <a class="el" href="classTankLED.html">TankLED</a>)</td><td class="entry"><a class="el" href="classTankLED.html">TankLED</a></td><td class="entry"></td></tr>
-  <tr bgcolor="#f0f0f0"><td class="entry"><b>all_on</b>() (defined in <a class="el" href="classTankLED.html">TankLED</a>)</td><td class="entry"><a class="el" href="classTankLED.html">TankLED</a></td><td class="entry"></td></tr>
-  <tr bgcolor="#f0f0f0" class="even"><td class="entry"><b>led_set_state</b>(uint8_t led_index, const uint16_t states[], const uint8_t state_count) (defined in <a class="el" href="classTankLED.html">TankLED</a>)</td><td class="entry"><a class="el" href="classTankLED.html">TankLED</a></td><td class="entry"></td></tr>
-  <tr bgcolor="#f0f0f0"><td class="entry"><b>led_turn_off</b>(uint8_t led_index) (defined in <a class="el" href="classTankLED.html">TankLED</a>)</td><td class="entry"><a class="el" href="classTankLED.html">TankLED</a></td><td class="entry"></td></tr>
-  <tr bgcolor="#f0f0f0" class="even"><td class="entry"><b>led_turn_on</b>(uint8_t led_index) (defined in <a class="el" href="classTankLED.html">TankLED</a>)</td><td class="entry"><a class="el" href="classTankLED.html">TankLED</a></td><td class="entry"></td></tr>
-  <tr bgcolor="#f0f0f0"><td class="entry"><b>loop</b>() (defined in <a class="el" href="classTankLED.html">TankLED</a>)</td><td class="entry"><a class="el" href="classTankLED.html">TankLED</a></td><td class="entry"></td></tr>
-  <tr bgcolor="#f0f0f0" class="even"><td class="entry"><b>setup</b>(const uint8_t led_pins[]) (defined in <a class="el" href="classTankLED.html">TankLED</a>)</td><td class="entry"><a class="el" href="classTankLED.html">TankLED</a></td><td class="entry"></td></tr>
-</table></div><!-- contents -->
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:aa8561df992171276538f8419971182ba"><td class="memItemLeft" align="right" valign="top"><a id="aa8561df992171276538f8419971182ba"></a>
+uint8_t&#160;</td><td class="memItemRight" valign="bottom"><b>led_pin</b></td></tr>
+<tr class="separator:aa8561df992171276538f8419971182ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac4418e174eeb1cd4d2713cc3aca59a38"><td class="memItemLeft" align="right" valign="top"><a id="ac4418e174eeb1cd4d2713cc3aca59a38"></a>
+LedState&#160;</td><td class="memItemRight" valign="bottom"><b>state</b></td></tr>
+<tr class="separator:ac4418e174eeb1cd4d2713cc3aca59a38"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad336c22e2956faf696f5723ce82152fe"><td class="memItemLeft" align="right" valign="top"><a id="ad336c22e2956faf696f5723ce82152fe"></a>
+uint8_t&#160;</td><td class="memItemRight" valign="bottom"><b>blink_count</b></td></tr>
+<tr class="separator:ad336c22e2956faf696f5723ce82152fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a91e45f3ff309079211b542b4854dd486"><td class="memItemLeft" align="right" valign="top"><a id="a91e45f3ff309079211b542b4854dd486"></a>
+uint16_t&#160;</td><td class="memItemRight" valign="bottom"><b>blinks</b> [MAX_BLINK_COUNT]</td></tr>
+<tr class="separator:a91e45f3ff309079211b542b4854dd486"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab5e79654bfdedb1804e8f32320a546fd"><td class="memItemLeft" align="right" valign="top"><a id="ab5e79654bfdedb1804e8f32320a546fd"></a>
+uint8_t&#160;</td><td class="memItemRight" valign="bottom"><b>current_blink_index</b></td></tr>
+<tr class="separator:ab5e79654bfdedb1804e8f32320a546fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a04a11a5b8971dfe93317e39d3558baeb"><td class="memItemLeft" align="right" valign="top"><a id="a04a11a5b8971dfe93317e39d3558baeb"></a>
+unsigned long&#160;</td><td class="memItemRight" valign="bottom"><b>next_blink_change</b></td></tr>
+<tr class="separator:a04a11a5b8971dfe93317e39d3558baeb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<hr/>The documentation for this struct was generated from the following file:<ul>
+<li>src/<a class="el" href="tank__led_8h_source.html">tank_led.h</a></li>
+</ul>
+</div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated by&#160;<a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1

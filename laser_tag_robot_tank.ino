@@ -1,1 +1,1 @@
-./sketches/wander_bot.ino
+sketches/motor_stress_test.ino

@@ -1,7 +1,4 @@
 var searchData=
 [
-  ['tank_6',['Tank',['../classTank.html',1,'']]],
-  ['tankled_7',['TankLED',['../classTankLED.html',1,'']]],
-  ['tankstatus_8',['TankStatus',['../structTankStatus.html',1,'']]],
-  ['turretstatus_9',['TurretStatus',['../structTurretStatus.html',1,'']]]
+  ['setup_5froutine_6',['setup_routine',['../classTank.html#af094f23f4a2029889897fd7d8f0b2241',1,'Tank']]]
 ];
