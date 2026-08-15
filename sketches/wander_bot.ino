@@ -114,7 +114,7 @@ void loop()
 
   tank.loop();
 }
-// TODO: could consider to make whether tank stops at target an optional flae
+// TODO: could consider to make whether tank stops at target an optional flag
 
 // to reconnoiter, take a 360-degree survey without driving
 void begin_recon()

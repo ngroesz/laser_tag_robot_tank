@@ -2,6 +2,7 @@
 
 
 #include "constants.h"
+#include "tank_led.h"
 
 #define IR_RECEIVE_PIN IR_RX_PIN
 #define USE_CALLBACK_FOR_TINY_RECEIVER
@@ -22,22 +23,28 @@ Debounce fire_button(BUTTON_PIN, LOW);
 boolean ir_command_received = false;
 uint16_t ir_command = 0;
 
+TankLed tank_led;
+
 void setup()
 {
   Serial.begin(115200);
   Serial.println(F("START " __FILE__ " from " __DATE__ "\r\n"));
 
-  pinMode(LED_PIN, OUTPUT);
+  uint8_t pins[] = {LED_PIN};
+  tank_led.setup(pins, HIGH);
+
   pinMode(BUTTON_PIN, INPUT_PULLUP);
-  digitalWrite(LED_PIN, LOW);
+
   if (!initPCIInterruptForTinyReceiver()) {
     Serial.println(F("could not initialize IR"));
   }
+
   Serial.println(F("Initialized"));
 }
 
 void loop()
 {
+  tank_led.loop();
   if (millis() - time_debounce >= debounce_delay) {
     time_debounce = millis();
     fire_button.update(); // Update button state every debounce_delay
@@ -56,6 +63,7 @@ void loop()
 
     if (ir_command == IR_CODE_ASTERISK) {
       Serial.println("received hit");
+      tank_led.set_blinks(0, (const uint16_t[]){500, 500}, 2, 6);
     }
   }
 }
