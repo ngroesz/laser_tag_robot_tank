@@ -30,7 +30,7 @@ void setup()
   Serial.begin(115200);
   Serial.println(F("START " __FILE__ " from " __DATE__ "\r\n"));
 
-  uint8_t pins[] = {LED_PIN};
+  uint8_t pins[] = {LED_PIN, 13};
   tank_led.setup(pins, HIGH);
 
   pinMode(BUTTON_PIN, INPUT_PULLUP);
@@ -54,6 +54,7 @@ void loop()
   if (fire_button.isPressed()) {
     Serial.println("Button pressed");
     fire();
+    tank_led.set_blinks(1, (const uint16_t[]){500, 500}, 2, 6);
   }
 
   if (ir_command_received) {

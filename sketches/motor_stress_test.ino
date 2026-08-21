@@ -76,6 +76,7 @@ void loop()
 {
   if (current_state == wait) {
       tank.drive_stop();
+      tank.turret_stop();
   } else {
     if (millis() > last_drive_change_millis + DRIVE_CHANGE_DELAY) {
       Serial.println("change drive direction");

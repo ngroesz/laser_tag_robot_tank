@@ -18,7 +18,6 @@ PVision            0.0.4
 VL53L0X            1.3.1
 Wire               1.0
 
-
 Here are where to find those libraries:
  - IRMP (https://github.com/IRMP-org/IRMP)
  - PinChangeInterrupt (https://github.com/NicoHood/PinChangeInterrupt)
@@ -35,7 +34,7 @@ In order to get this to work, I had to install the below arduino-cli and setup a
  - arduino-cli (https://github.com/arduino/arduino-cli) Needed for above Arudino-Makefile
 
 ### Physical Requirements:
-  You will, of course, need a Laser-Tag Robot Tank. You will also need a computer and an FTDI board in order to communicate with the Arduino chip on the LTRT circuit board.
+  You will, of course, need a Laser-Tag Robot Tank. You will also need a computer, a USB cable,  and an FTDI board in order to communicate with the Arduino chip on the LTRT circuit board.
 You will also need an IR remote in order to communicate with the tank.
 
 ## Available Sketches
@@ -76,15 +75,18 @@ just remove the tracks.
 ### Coding A Real-Time System
 
 If you have never worked with embedded systems or robots you may find the coding to be difficult at first.
-I am an experienced software engineer but I found it difficult to wrap my mind around a real-time system.
+I am an experienced software developer but I find it difficult to wrap my mind around a real-time system.
 The important thing to grasp is that your loop() function will execute many times per second. So, if you
 want to turn right 90 degrees and then left 45 degrees, you CANNOT do something like:
 ```
-tank.turn_right(90);
-tank.turn_left(45);
+void loop() {
+  tank.turn_right(90);
+  tank.turn_left(45);
+}
 ```
 
-Because this will, in effect, ignore the turn_right(90) call and merely execute turn_left(45).
+Because this will, in effect, continously negate the prior call by immediately trying to turn in the other
+direction.
 
 Instead, you must use some combination of timers, state variables, and callbacks in order to keep track of
 what is happening and make the robot do what you want.
@@ -135,7 +137,7 @@ Look at the empty_bot.ino sketch if you want a good starting point.
 The ATmega328p boasts 32,256 bytes of flash memory and 2,048 bytes of SRAM. This memory can be taken
 up fairly quickly so you'll have to program conservatively. As of this writing, an empty sketch that
 includes all the libraries but doesn't in itself do anything at all takes up 8606/32256 byes of program
-space and 634/2048 bytes SRAM. This leaves 23,650 and 1,414 bytes, respectively. That is all the 
+space and 634/2048 bytes SRAM. This leaves 23,650 and 1,414 bytes, respectively. That is all the
 space you have left to make your robot the most intelligent and deadliest of all. Expect these numbers to
 change slightly as I flesh-out the Tank library. But it is nearly complete so I don't expect to consume
 much more space.
