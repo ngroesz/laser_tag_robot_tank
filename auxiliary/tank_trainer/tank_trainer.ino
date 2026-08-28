@@ -2,7 +2,7 @@
 
 
 #include "constants.h"
-#include "tank_led.h"
+#include "mini_led.h"
 
 #define IR_RECEIVE_PIN IR_RX_PIN
 #define USE_CALLBACK_FOR_TINY_RECEIVER

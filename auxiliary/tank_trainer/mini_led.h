@@ -46,7 +46,7 @@ class MiniLed
         void _led_off(struct Led & _led);
 
         void _print_led_state(struct Led & _led);
-        
+
         boolean _on_state;
         boolean _off_state;
 

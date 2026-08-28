@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#include "tank_led.h"
+#include "mini_led.h"
 
 void MiniLed::setup(const uint8_t led_pins[], boolean on_state)
 {
