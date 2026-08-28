@@ -2,6 +2,10 @@
 
 If you want to write code for the Laser-Tag Robot Tank (hereafter, LTRT), this is the document for you.
 
+## Quickstart
+
+Check out the [quickstart](quickstart.md) file for the quickest possible way to get your robot tank to do something interesting.
+
 ## Requirements
 
 ### Arduino

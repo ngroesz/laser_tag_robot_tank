@@ -4,3 +4,4 @@
 - maybe make degrees be from 1-360, that way target sentinels could match
 - look at clang-format for comment formatting
 - see if whether BUMP_DETECTION_DELAY_MILLIS can be removed, because of the caps that I added
+- is there any way to improve port detection in the Makefile
