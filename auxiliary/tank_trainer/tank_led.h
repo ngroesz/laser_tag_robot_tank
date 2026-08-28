@@ -24,7 +24,7 @@ struct Led {
   unsigned long next_blink_change;
 };
 
-class TankLed
+class MiniLed
 {
     public:
         // TODO: consider to move setup to a constructor

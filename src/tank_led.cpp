@@ -2,14 +2,14 @@
 
 #include "tank_led.h"
 
-void TankLed::setup(const uint8_t led_pins[])
+void MiniLed::setup(const uint8_t led_pins[])
 {
   for(uint8_t led_index = 0; led_index < LED_COUNT; ++led_index) {
     _initialize_led(_leds[led_index], led_pins[led_index]);
   }
 }
 
-void TankLed::loop()
+void MiniLed::loop()
 {
   _current_millis = millis();
 
@@ -21,10 +21,10 @@ void TankLed::loop()
 }
 
 // TODO: I'm not sure if it's necessary to put the actual logic into the private function
-void TankLed::on(uint8_t led_index) { _led_on(_leds[led_index]); }
-void TankLed::off(uint8_t led_index) { _led_off(_leds[led_index]); }
+void MiniLed::on(uint8_t led_index) { _led_on(_leds[led_index]); }
+void MiniLed::off(uint8_t led_index) { _led_off(_leds[led_index]); }
 
-void TankLed::toggle(uint8_t led_index)
+void MiniLed::toggle(uint8_t led_index)
 {
   if (_leds[led_index].state == led_on) {
     off(led_index);
@@ -33,21 +33,21 @@ void TankLed::toggle(uint8_t led_index)
   }
 }
 
-void TankLed::all_on()
+void MiniLed::all_on()
 {
   for(uint8_t led_index = 0; led_index < LED_COUNT; ++led_index) {
     on(led_index);
   }
 }
 
-void TankLed::all_off()
+void MiniLed::all_off()
 {
   for(uint8_t led_index = 0; led_index < LED_COUNT; ++led_index) {
     off(led_index);
   }
 }
 
-void TankLed::set_blinks(uint8_t led_index, const uint16_t blinks[], const uint8_t blink_count)
+void MiniLed::set_blinks(uint8_t led_index, const uint16_t blinks[], const uint8_t blink_count)
 {
   Led& led_to_update = _leds[led_index];
 
@@ -60,7 +60,7 @@ void TankLed::set_blinks(uint8_t led_index, const uint16_t blinks[], const uint8
   led_to_update.next_blink_change = 0;
 }
 
-void TankLed::_initialize_led(struct Led & _led, const uint8_t led_pin)
+void MiniLed::_initialize_led(struct Led & _led, const uint8_t led_pin)
 {
   _led.led_pin = led_pin;
   _led.state = led_off;
@@ -69,19 +69,19 @@ void TankLed::_initialize_led(struct Led & _led, const uint8_t led_pin)
   digitalWrite(_led.led_pin, HIGH);
 }
 
-void TankLed::_led_on(struct Led & _led)
+void MiniLed::_led_on(struct Led & _led)
 {
   _led.state = led_on;
   digitalWrite(_led.led_pin, LOW);
 }
 
-void TankLed::_led_off(struct Led & _led)
+void MiniLed::_led_off(struct Led & _led)
 {
   _led.state = led_off;
   digitalWrite(_led.led_pin, HIGH);
 }
 
-void TankLed::_update_led(struct Led & _led)
+void MiniLed::_update_led(struct Led & _led)
 {
   if (_current_millis > _led.next_blink_change) {
     ++_led.current_blink_index;

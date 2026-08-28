@@ -9,7 +9,7 @@
 #include "src/tank.h"
 
 Tank tank;
-TankLed tank_led;
+MiniLed tank_led;
 PVision ircam;
 VL53L0X distance_sensor;
 

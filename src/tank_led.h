@@ -21,7 +21,7 @@ struct Led {
   unsigned long next_blink_change;
 };
 
-class TankLed
+class MiniLed
 {
     public:
         void setup(const uint8_t led_pins[]);

@@ -23,7 +23,7 @@ Debounce fire_button(BUTTON_PIN, LOW);
 boolean ir_command_received = false;
 uint16_t ir_command = 0;
 
-TankLed tank_led;
+MiniLed tank_led;
 
 void setup()
 {

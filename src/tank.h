@@ -142,7 +142,7 @@ class Tank
     // TODO: maybe I move this to a utility file?
     const int16_t normalize_angle(const int16_t degrees);
 
-    TankLed _tank_led;
+    MiniLed _tank_led;
 
   private:
     void _process_interrupt_flags(unsigned long current_millis);
