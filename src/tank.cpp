@@ -1,6 +1,7 @@
 #include "tank.h"
 
 #include "TinyIRReceiver.hpp"
+#include "TinyIRSender.hpp"
 
 // initalize global variables
 volatile bool _turret_encoder_interrupt_flag = false;
@@ -54,11 +55,9 @@ void Tank::initialize()
   Serial.println(F("Tank initializing ..."));
 #endif
 
-  game_mode_active = false;
-
   // initialize LEDs
   uint8_t pins[] = {LED_PIN_1, LED_PIN_2, LED_PIN_3};
-  _tank_led.setup(pins);
+  _tank_led.setup(pins, LOW);
   _tank_led.on(0);
   delay(250);
 
@@ -117,9 +116,7 @@ void Tank::initialize()
 
   // TODO: I think that I should create an InternalTankStatus data structure
   _bump_status.bump_front = 0;
-  _bump_status.bump_front_millis = 0;
   _bump_status.bump_rear = 0;
-  _bump_status.bump_rear_millis = 0;
 
   if (!initPCIInterruptForTinyReceiver()) {
 #ifdef TANK_DEBUG_OUTPUT
@@ -155,8 +152,9 @@ void Tank::setup_routine() {
   } while(_ir_status.last_command != IR_CODE_OK);
   _ir_status.last_command = 0;
 
+  _initialize_battle_status();
+
   _tank_led.all_off();
-  game_mode_active = true;
 }
 
 void Tank::loop() {
@@ -181,6 +179,16 @@ void Tank::set_bump_rear_callback(CallbackFunction callback) {
 
 void Tank::set_ir_command_callback(CallbackFunctionWithInt callback) {
   _ir_status.ir_command_callback = callback;
+}
+
+void Tank::fire() {
+  if (_last_fire_millis + RELOAD_MILLIS > millis()) {
+    sendNEC(IR_SEND_PIN, 0x0, IR_CODE_ASTERISK, 0);
+  }
+
+  // it is intentional that _last_fire_millis is set whether or not the tank actually fired
+  // this is to prevent bots from spamming the fire() button
+  _last_fire_millis = millis();
 }
 
 void Tank::drive_forward(const uint8_t speed) {
@@ -226,15 +234,10 @@ void Tank::drive_turn_right(uint8_t speed) {
 }
 
 void Tank::drive_turn_degrees(int16_t degrees, CallbackFunction target_callback, uint8_t speed) {
-  // TODO: I'm still not sure it is turning left/right in a reasonable way
   int16_t normalized_degrees = normalize_angle(degrees);
-  Serial.print("told to turn toward degrees ");
-  Serial.println(normalized_degrees);
   if (normalized_degrees > 0 && normalized_degrees <= 180) {
-    Serial.println("right turn");
     drive_turn_right_degrees(normalized_degrees, target_callback, speed);
   } else {
-    Serial.println("left turn");
     drive_turn_left_degrees(normalized_degrees, target_callback, speed);
   }
 }
@@ -461,9 +464,11 @@ void Tank::_write_motor_control_code(const unsigned char & control_code) {
   Serial.println(control_code, BIN);
 #endif
 
-  digitalWrite(SHIFT_CLEAR_PIN, LOW);
-  shiftOut(SHIFT_DATA_PIN, SHIFT_CLOCK_PIN, MSBFIRST, control_code);
-  digitalWrite(SHIFT_CLEAR_PIN, HIGH);
+  if (!paused) {
+    digitalWrite(SHIFT_CLEAR_PIN, LOW);
+    shiftOut(SHIFT_DATA_PIN, SHIFT_CLOCK_PIN, MSBFIRST, control_code);
+    digitalWrite(SHIFT_CLEAR_PIN, HIGH);
+  }
 #endif
 }
 
@@ -485,7 +490,7 @@ void Tank::_process_encoder_flags(unsigned long current_millis) {
     _check_turret_target();
 #ifdef TANK_DEBUG_OUTPUT
     if (_turret_status.encoder_count % 10 == 0) {
-      Serial.print("turret encoder_count: ");
+      Serial.print(F("turret encoder_count: "));
       Serial.println(_turret_status.encoder_count);
     }
 #endif
@@ -519,6 +524,9 @@ void Tank::_process_encoder_flags(unsigned long current_millis) {
   }
 
   if (_left_wheel_encoder_interrupt_flag) {
+#ifdef TANK_DEBUG_OUTPUT
+    Serial.println(F("left wheel encoder interrupt"));
+#endif
     _left_wheel_encoder_interrupt_flag = false;
     if (_left_motor_status.direction == motor_forward) {
         _tank_status.wheel_encoder_count_left++;
@@ -529,6 +537,9 @@ void Tank::_process_encoder_flags(unsigned long current_millis) {
   }
 
   if (_right_wheel_encoder_interrupt_flag) {
+#ifdef TANK_DEBUG_OUTPUT
+    Serial.println(F("right wheel encoder interrupt"));
+#endif
     _right_wheel_encoder_interrupt_flag = false;
     if (_right_motor_status.direction == motor_forward) {
         _tank_status.wheel_encoder_count_right++;
@@ -540,9 +551,8 @@ void Tank::_process_encoder_flags(unsigned long current_millis) {
 }
 
 void Tank::_process_bump_flags(unsigned long current_millis) {
-  if (_bump_front_interrupt_flag != _bump_status.bump_front && current_millis > _bump_status.bump_front_millis + BUMP_DETECTION_DELAY_MILLIS) {
+  if (_bump_front_interrupt_flag != _bump_status.bump_front) {
     _bump_status.bump_front = _bump_front_interrupt_flag;
-    _bump_status.bump_front_millis = current_millis;
 #ifdef TANK_DEBUG_OUTPUT
     Serial.print(F("Bump front status: "));
     Serial.println(_bump_front_interrupt_flag);
@@ -557,9 +567,8 @@ void Tank::_process_bump_flags(unsigned long current_millis) {
     }
   }
 
-  if (_bump_rear_interrupt_flag != _bump_status.bump_rear && current_millis > _bump_status.bump_rear_millis + BUMP_DETECTION_DELAY_MILLIS) {
+  if (_bump_rear_interrupt_flag != _bump_status.bump_rear) {
     _bump_status.bump_rear = _bump_rear_interrupt_flag;
-    _bump_status.bump_rear_millis = current_millis;
 #ifdef TANK_DEBUG_OUTPUT
     Serial.print(F("Bump rear status: "));
     Serial.println(_bump_rear_interrupt_flag);
@@ -576,6 +585,15 @@ void Tank::_process_ir_flags() {
   if (_ir_command_received) {
     _ir_command_received = false;
     _ir_status.last_command = _ir_command;
+
+    if (_ir_status.last_command == IR_CODE_ASTERISK) {
+      _maybe_register_hit();
+    }
+
+    if (_ir_status.last_command == IR_CODE_POUND) {
+      _pause_unpause();
+    }
+
     if (_ir_status.ir_command_callback) {
       _ir_status.ir_command_callback(_ir_status.last_command);
     }
@@ -585,11 +603,6 @@ void Tank::_process_ir_flags() {
 // note that this function does not reset drive target distance/degrees variables. whereas public drive functions do
 // reset these variables.
 void Tank::_drive(const MotorDirection left_direction, const MotorDirection right_direction, const uint8_t speed) {
-  Serial.print("tank drive: ");
-  Serial.print(left_direction);
-  Serial.print(" ");
-  Serial.println(right_direction);
-
   _requested_speed = speed;
   _control_motor(_left_motor_status, left_direction);
   _control_motor(_right_motor_status, right_direction);
@@ -669,4 +682,58 @@ void Tank::_turret_target_reached() {
     _turret_status.target_callback();
   }
   _turret_status.target_callback = NULL;
+}
+
+void Tank::_initialize_battle_status() {
+  _battle_status.active = true;
+  _battle_status.hit_count = 0;
+  _battle_status.last_hit_millis = 0;
+}
+
+void Tank::_maybe_register_hit() {
+  if (!_battle_status.active || _paused) {
+    return;
+  }
+
+  if (_battle_status.last_hit_millis + INVINCIBILITY_MILLIS > millis()) {
+    return;
+  }
+
+  _battle_status.hit_count += 1;
+
+  if (_battle_status.hit_count == 4) {
+    _game_over();
+  } else {
+    _set_leds_to_hit_count();
+  }
+}
+
+void Tank::_game_over() {
+}
+
+void Tank::_set_leds_to_hit_count() {
+  _tank_led.all_off();
+  switch (_battle_status.hit_count) {
+    case 1:
+      _tank_led.on(1);
+      break;
+    case 2:
+      _tank_led.on(1);
+      _tank_led.on(2);
+      break;
+    case 3:
+      _tank_led.on(1);
+      _tank_led.on(2);
+      _tank_led.on(3);
+  }
+}
+
+
+void Tank::_pause_unpause() {
+  if (_paused) {
+    _paused = false;
+  } else {
+    _paused = true;
+    _tank_led.set_blinks(0, (const uint16_t[]){500, 500}, 2);
+  }
 }

@@ -1,10 +1,16 @@
 #ifndef TANK_CONSTANTS_H
 #define TANK_CONSTANTS_H
 
+// pause time between shots. changing this will change gameplay.
+#define RELOAD_MILLIS 1000
+
+// after a tank is hit, is is invincible for this long. changing this will change gameplay.
+#define INVINCIBILITY_MILLIS 5000
+
 // there are Serial.print statements scattered throughout the Tank class.
 // you will see them if you have initialized Serial and you are connected to the tank.
 // removing this flag will quiet them.
-//#define TANK_DEBUG_OUTPUT
+#define TANK_DEBUG_OUTPUT
 
 // the piezo speaker is annoying, if you do not want to hear it during development then comment-out this flag
 #define SOUND_ENABLED
@@ -12,15 +18,16 @@
 // you may wish to do programming/debugging without the motors enabled, if so comment-out this flag
 // if you are programming with just a 5V USB connecting cable and no batteries connected to the motor power
 // supply, then you should definitely comment-out this flag
-#define MOTORS_ENABLED
+//#define MOTORS_ENABLED
 
 // if you want to control the LEDs yourself, and do not want the Tank class to mess with them, you can remove this flag
 #define LEDS_ENABLED
 
+// these should not need to be changed. changing the polarity of the motor wiring would require this to be changed
 #define CONTROL_CODE_RIGHT_MOTOR_FORWARD 8
 #define CONTROL_CODE_RIGHT_MOTOR_REVERSE 4
-#define CONTROL_CODE_LEFT_MOTOR_FORWARD 1
-#define CONTROL_CODE_LEFT_MOTOR_REVERSE 2
+#define CONTROL_CODE_LEFT_MOTOR_FORWARD 2
+#define CONTROL_CODE_LEFT_MOTOR_REVERSE 1
 #define CONTROL_CODE_TURRET_MOTOR_FORWARD 16
 #define CONTROL_CODE_TURRET_MOTOR_REVERSE 32
 
@@ -36,10 +43,6 @@
 // of angle change.
 #define TURRET_GEAR_RATIO 1.36
 
-// bump status won't change faster than this delay.
-// this effectively debounces the bump switches.
-#define BUMP_DETECTION_DELAY_MILLIS 50
-
 // the ratio between a wheel encoder sensor trigger and distance in cms
 // this is experimentally determined but could probably be figured out
 // by factoring-in wheel diameter and gear ratio.
@@ -51,7 +54,7 @@
 // this number determines the relationship between wheel encoder count and degrees turned
 // for example, when calculating right turn for N degrees the formula is:
 // wheel_encoder_count_left + -(wheel_encoder_count_right) * WHEEL_ENCODER_TURN_RATIO
-// thus, when this number is larger, the number of degrees turned will be greater, for a 
+// thus, when this number is larger, the number of degrees turned will be greater, for a
 // given encoder count
 #define WHEEL_ENCODER_TURN_RATIO .122
 

@@ -1,7 +1,8 @@
 #ifndef tank_h
 #define tank_h
 
-// it's important to define these constants before including TinyIRReceiver.hpp (which is imported in tank.cpp)
+// it's important to define these constants before including TinyIRReceiver.hpp/TinyIRSender.hpp (which are imported in tank.cpp)
+#define IR_SEND_PIN IR_TX_PIN
 #define IR_RECEIVE_PIN IR_RX_PIN
 #define USE_CALLBACK_FOR_TINY_RECEIVER
 
@@ -18,14 +19,11 @@
 typedef void (*CallbackFunction) ();
 typedef void (*CallbackFunctionWithInt) (uint16_t);
 
-// TODO: are these definitions necessary?
-/* begin global routines */
-void _turret_encoder_interrupt();
-void _turret_calibration_interrupt();
-void _bump_0_interrupt();
-/* end global routines */
-
-//bool game_mode_active;
+struct BattleStatus {
+  bool active = 0;
+  uint8_t hit_count = 0;
+  uint32_t last_hit_millis = 0;
+};
 
 enum MotorDirection {
   motor_stop,
@@ -47,13 +45,10 @@ struct MotorStatus {
 };
 
 struct BumpStatus {
-  uint32_t bump_front_millis = 0;
-  uint32_t bump_rear_millis = 0;
-  uint8_t bump_front = RISING;
+  uint8_t bump_front = 0;
   uint8_t bump_rear = 0;
 };
 
-// TODO: use this?
 struct IRStatus {
   uint16_t last_command = 0;
   CallbackFunctionWithInt ir_command_callback = NULL;
@@ -70,6 +65,7 @@ struct TurretStatus {
 
 // TankStatus is a data structure intended to be returned to the client. It should contain
 // all the information that the client will care about.
+// TODO: move all of this to a function, as every member variable will be sourced from private data structures
 struct TankStatus {
   uint8_t hit_count = 0;
   bool bump_front = false;
@@ -94,22 +90,56 @@ class Tank
     /// This should probably be called sometime during your setup() function.
     void initialize();
 
-    /// @brief Waits for OK signal, calibrates the turret, and then waits for OK signal again.
-    /// The idea is that, for any game-playing robot, to call this at the end of your setup() function.
-    /// Once setup_routine() returns, the turret will have been calibrated and the tank will have been given the go-ahead.
-    /// It isn't necessary to use this during development. If you just need the turret to be calibrated, you can call
-    /// turret_calibrate instead.
+    /** Brief: Do turret calibration and setup in preparation for battle
+    *
+    * This function should be called at the end of your bot's setup() routine
+    *
+    * This function:
+    *  - waits until OK is pressed
+    *  - then calibrates turret
+    *  - then waits until OK is pressed before returning
+    *
+    * After this function completes:
+    *  - the turret will be calibrated
+    *  - battle status will be reset (hit count to zero and state = active)
+    *
+    * It isn't necessary to use this during development. If you just need the turret to be calibrated, you can call
+    * turret_calibrate(), instead
+    */
     void setup_routine();
 
-    /// @brief Updates the tank. Must be called continuously.
-    /// This function must be called in order for the tank to do anything and for it to update its own state.
-    /// This function should be called from your own bot's loop() function.
+    /** @brief Updates the tank. Must be called continuously.
+    * This function must be called in order for the tank to do anything and for it to update its own state.
+    * This function should be called from your own bot's loop() function.
+    */
     void loop();
 
+    /** @brief Front bump callback
+    *
+    * Call this with your own CallbackFunction (a void function that takes no
+    * arguments) somewhere in your setup() routine.  Your function will be
+    * called whenever the front bumper is pressed.
+    */
     void set_bump_front_callback(CallbackFunction);
+
+    /** @brief Rear bump callback
+    *
+    * Call this with your own CallbackFunction (a void function that takes no
+    * arguments) somewhere in your setup() routine.  Your function will be
+    * called whenever the rear bumper is pressed.
+    */
     void set_bump_rear_callback(CallbackFunction);
+
     // Note that set_ir_command_callback is useful for development purposes but you should not have to use this function for normal gameplay
     void set_ir_command_callback(CallbackFunctionWithInt);
+
+    /* @brief Fire laser cannon
+    *
+    * Important note: Fire will send signal only if RELOAD_MILLIS (see tank_constants.h) has passed.
+    * However, fire will always reset the reload timer, even if nothing is fired. This is to
+    * prevent bots from spamming the fire button.
+    */
+    void fire();
 
     void drive_forward(const uint8_t speed = MOTOR_DEFAULT_SPEED);
     // TODO: could consider to make whether tank stops at target an optional flag
@@ -163,11 +193,19 @@ class Tank
     void _update_motors();
     uint8_t _determine_motor_control_code(const uint8_t forward_code, const uint8_t reverse_code, MotorStatus & status);
     void _control_motor(MotorStatus & status, const MotorDirection direction);
-    unsigned char _create_motor_control_code();
     void _write_motor_control_code(const unsigned char & control_code);
-    unsigned char _current_motor_control_code;
 
-    bool game_mode_active;
+    void _initialize_battle_status();
+    void _maybe_register_hit();
+    void _pause_unpause();
+    void _game_over();
+    void _set_leds_to_hit_count();
+
+    bool _paused;
+
+    uint32_t _last_fire_millis;
+
+    unsigned char _current_motor_control_code;
 
     uint8_t _requested_speed;
     uint8_t _current_speed;
@@ -180,6 +218,7 @@ class Tank
     struct IRStatus _ir_status;
     struct TurretStatus _turret_status;
     struct TankStatus _tank_status;
+    struct BattleStatus _battle_status;
 
     CallbackFunction _bump_front_callback = NULL;
     CallbackFunction _bump_rear_callback = NULL;

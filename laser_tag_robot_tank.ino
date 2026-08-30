@@ -1,1 +1,1 @@
-./sketches/hardware_test.ino
+sketches/hardware_test.ino

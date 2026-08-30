@@ -1,3 +1,8 @@
+// TODO: add bumper test
+// also, I want a target test (or, tank will always have to be acting as a target)
+// If I add more than one mode, I will have to consolidate modes?
+
+
 #include <PVision.h>
 #include <VL53L0X.h>
 #include <Wire.h>
@@ -13,16 +18,9 @@ MiniLed tank_led;
 PVision ircam;
 VL53L0X distance_sensor;
 
-// TODO: will this be used with camera test?
 byte camera_result;
-struct target {
-  uint16_t x;
-  uint16_t y;
-  uint16_t size;
-};
 
 typedef void (*ModeFunction) ();
-
 ModeFunction mode_function = NULL;
 
 int last_ir_command;
@@ -37,7 +35,7 @@ void setup()
 #ifdef DEBUG_OUTPUT
   Serial.begin(115200);
   Serial.println(F("START " __FILE__ " from " __DATE__ "\r\n"));
-  Serial.println("Initializing ...");
+  Serial.println(F("Initializing ..."));
 #endif
 
   tank.initialize();
@@ -48,12 +46,12 @@ void setup()
   // you should not mess with the LEDs in your own combat robot, unless you
   // are doing so as part of debugging feedback that you will eventually remove.
   uint8_t pins[] = {LED_PIN_1, LED_PIN_2, LED_PIN_3};
-  tank_led.setup(pins);
+  tank_led.setup(pins, LOW);
   tank_led.all_off();
 
   tank.set_ir_command_callback(process_ir_command);
 #ifdef DEBUG_OUTPUT
-  Serial.println("Tank initialized.");
+  Serial.println(F("Tank initialized."));
 #endif
 }
 
@@ -68,25 +66,25 @@ void loop()
 
 void camera_init()
 {
-  Serial.println("Initializing camera ...");
+  Serial.println(F("Initializing camera ..."));
   ircam.init();
 #ifdef DEBUG_OUTPUT
-  Serial.println("Camera initialized.");
+  Serial.println(F("Camera initialized."));
 #endif
 }
 
 void distance_sensor_init()
 {
-  Serial.println("Initializing distance sensor ...");
+  Serial.println(F("Initializing distance sensor ..."));
   distance_sensor.setTimeout(500);
   if (!distance_sensor.init()) {
 #ifdef DEBUG_OUTPUT
-    Serial.println("Failed to detect and initialize sensor!");
+    Serial.println(F("Failed to detect and initialize sensor!"));
 #endif
   }
   distance_sensor.startContinuous(DISTANCE_READ_DELAY);
 #ifdef DEBUG_OUTPUT
-  Serial.println("Distance sensor initialized.");
+  Serial.println(F("Distance sensor initialized."));
 #endif
 }
 
@@ -94,27 +92,27 @@ void drive_test()
 {
   switch (last_ir_command) {
     case IR_CODE_UP:
-      Serial.println("drive forward");
+      Serial.println(F("drive forward"));
       tank.drive_forward();
       last_ir_command = 0;
       break;
     case IR_CODE_RIGHT:
-      Serial.println("turn right");
+      Serial.println(F("turn right"));
       tank.drive_turn_right();
       last_ir_command = 0;
       break;
     case IR_CODE_DOWN:
-      Serial.println("drive reverse");
+      Serial.println(F("drive reverse"));
       tank.drive_reverse();
       last_ir_command = 0;
       break;
     case IR_CODE_LEFT:
-      Serial.println("turn left");
+      Serial.println(F("turn left"));
       tank.drive_turn_left();
       last_ir_command = 0;
       break;
     case IR_CODE_OK:
-      Serial.println("drive stop");
+      Serial.println(F("drive stop"));
       tank.drive_stop();
       last_ir_command = 0;
       break;
@@ -130,27 +128,27 @@ void drive_measured_test()
 {
   switch (last_ir_command) {
     case IR_CODE_UP:
-      Serial.println("drive forward 10 cm");
+      Serial.println(F("drive forward 10 cm"));
       tank.drive_forward_target(10, drive_stop);
       last_ir_command = 0;
       break;
     case IR_CODE_DOWN:
-      Serial.println("drive reverse 10 cm");
+      Serial.println(F("drive reverse 10 cm"));
       tank.drive_reverse_target(10, drive_stop);
       last_ir_command = 0;
       break;
     case IR_CODE_RIGHT:
-      Serial.println("drive turn right 90 degrees");
+      Serial.println(F("drive turn right 90 degrees"));
       tank.drive_turn_right_degrees(90, drive_stop);
       last_ir_command = 0;
       break;
     case IR_CODE_LEFT:
-      Serial.println("drive turn left 90 degrees");
+      Serial.println(F("drive turn left 90 degrees"));
       tank.drive_turn_left_degrees(90, drive_stop);
       last_ir_command = 0;
       break;
     case IR_CODE_OK:
-      Serial.println("drive stop");
+      Serial.println(F("drive stop"));
       tank.drive_stop();
       last_ir_command = 0;
       break;
@@ -240,7 +238,7 @@ void distance_sensor_test()
 
     if (distance > 0 && distance < DISTANCE_MAX) {
 #ifdef DEBUG_OUTPUT
-      Serial.print("Distance: ");
+      Serial.print(F("Distance: "));
       Serial.println(distance);
 #endif
       tank_led.all_off();
@@ -264,11 +262,11 @@ void camera_test()
     last_camera_read_millis = millis();
     camera_result = ircam.read();
     if (camera_result & BLOB1) {
-      Serial.print("Target detected. X:");
+      Serial.print(F("Target detected. X:"));
       Serial.print(ircam.Blob1.X);
-      Serial.print(" Y:");
+      Serial.print(F(" Y:"));
       Serial.print(ircam.Blob1.Y);
-      Serial.print(" Size:");
+      Serial.print(F(" Size:"));
       Serial.println(ircam.Blob1.Size);
     }
   }
@@ -284,10 +282,15 @@ void speaker_test()
   }
 }
 
+void bump_test()
+{
+  // TODO
+}
+
 void process_ir_command(int ir_command)
 {
 #ifdef DEBUG_OUTPUT
-  Serial.print("Received IR command: ");
+  Serial.print(F("Received IR command: "));
   Serial.println(ir_command);
 #endif
 
@@ -295,7 +298,7 @@ void process_ir_command(int ir_command)
     // numerical IR commands are used to switch test states
     case IR_CODE_ONE:
 #ifdef DEBUG_OUTPUT
-      Serial.println("Drive Test");
+      Serial.println(F("Drive Test"));
 #endif
       mode_function = drive_test;
       last_ir_command = 0;
@@ -303,7 +306,7 @@ void process_ir_command(int ir_command)
 
     case IR_CODE_TWO:
 #ifdef DEBUG_OUTPUT
-      Serial.println("Drive Measured Test");
+      Serial.println(F("Drive Measured Test"));
 #endif
       mode_function = drive_measured_test;
       last_ir_command = 0;
@@ -311,7 +314,7 @@ void process_ir_command(int ir_command)
 
     case IR_CODE_THREE:
 #ifdef DEBUG_OUTPUT
-      Serial.println("Turret Test");
+      Serial.println(F("Turret Test"));
 #endif
       mode_function = turret_test;
       last_ir_command = 0;
@@ -319,7 +322,7 @@ void process_ir_command(int ir_command)
 
     case IR_CODE_FOUR:
 #ifdef DEBUG_OUTPUT
-      Serial.println("Turret Measured Test");
+      Serial.println(F("Turret Measured Test"));
 #endif
       mode_function = turret_measured_test;
       last_ir_command = 0;
@@ -327,7 +330,7 @@ void process_ir_command(int ir_command)
 
     case IR_CODE_FIVE:
 #ifdef DEBUG_OUTPUT
-      Serial.println("Turret Calibration Test");
+      Serial.println(F("Turret Calibration Test"));
 #endif
       mode_function = turret_calibration_test;
       last_ir_command = 0;
@@ -335,7 +338,7 @@ void process_ir_command(int ir_command)
 
     case IR_CODE_SIX:
 #ifdef DEBUG_OUTPUT
-      Serial.println("Distance Sensor Test");
+      Serial.println(F("Distance Sensor Test"));
 #endif
       mode_function = distance_sensor_test;
       last_ir_command = 0;
@@ -344,7 +347,7 @@ void process_ir_command(int ir_command)
 
     case IR_CODE_SEVEN:
 #ifdef DEBUG_OUTPUT
-      Serial.println("Camera Test");
+      Serial.println(F("Camera Test"));
 #endif
       mode_function = camera_test;
       last_ir_command = 0;
@@ -353,7 +356,7 @@ void process_ir_command(int ir_command)
 
    case IR_CODE_EIGHT:
 #ifdef DEBUG_OUTPUT
-      Serial.println("LED Test");
+      Serial.println(F("LED Test"));
 #endif
       mode_function = led_test;
       last_ir_command = 0;
@@ -361,11 +364,20 @@ void process_ir_command(int ir_command)
 
     case IR_CODE_NINE:
 #ifdef DEBUG_OUTPUT
-      Serial.println("Speaker Test");
+      Serial.println(F("Speaker Test"));
 #endif
       mode_function = speaker_test;
       last_ir_command = 0;
       break;
+
+    case IR_CODE_ZERO:
+#ifdef DEBUG_OUTPUT
+      Serial.println(F("Bump Test"));
+#endif
+      mode_function = bump_test;
+      last_ir_command = 0;
+      break;
+
     // if ir_command is not a state-switching command, then remember the ir_command
     default:
       last_ir_command = ir_command;
