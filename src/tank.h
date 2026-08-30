@@ -7,9 +7,10 @@
 #define USE_CALLBACK_FOR_TINY_RECEIVER
 
 #include "ir_codes.h"
+#include "mini_led.h"
+#include "mini_tone.h"
 #include "pins.h"
 #include "tank_constants.h"
-#include "mini_led.h"
 
 #include <Arduino.h>
 #include <PinChangeInterrupt.h>
@@ -17,6 +18,7 @@
 #include <Wire.h>
 
 typedef void (*CallbackFunction) ();
+typedef void (*CallbackFunctionWithBool) (bool);
 typedef void (*CallbackFunctionWithInt) (uint16_t);
 
 struct BattleStatus {
@@ -44,6 +46,10 @@ struct MotorStatus {
   unsigned long direction_change_request_millis;
 };
 
+// though we mostly only care whether the bumper switch is activated or not,
+// we use a uint8_t to track the status since the PinChangeInterrupt gives us
+// a ternary value of RISING/FALLING/CHANGE and we want to know when this 
+// value has changed
 struct BumpStatus {
   uint8_t bump_front = 0;
   uint8_t bump_rear = 0;
@@ -116,19 +122,23 @@ class Tank
 
     /** @brief Front bump callback
     *
-    * Call this with your own CallbackFunction (a void function that takes no
-    * arguments) somewhere in your setup() routine.  Your function will be
-    * called whenever the front bumper is pressed.
+    * Call this with your own CallbackFunctionWithBool (a void function that takes a
+    * boolean argument) somewhere in your setup() routine.  Your function will be
+    * called whenever the status of the front bumper changes.
+    * The boolean argument will be true if the front bumper is pressed and false
+    * if the bumper is released.
     */
-    void set_bump_front_callback(CallbackFunction);
+    void set_bump_front_callback(CallbackFunctionWithBool);
 
     /** @brief Rear bump callback
     *
-    * Call this with your own CallbackFunction (a void function that takes no
-    * arguments) somewhere in your setup() routine.  Your function will be
-    * called whenever the rear bumper is pressed.
+    * Call this with your own CallbackFunctionWithBool (a void function that takes a
+    * boolean argument) somewhere in your setup() routine.  Your function will be
+    * called whenever the status of the rear bumper changes.
+    * The boolean argument will be true if the rear bumper is pressed and false
+    * if the bumper is released.
     */
-    void set_bump_rear_callback(CallbackFunction);
+    void set_bump_rear_callback(CallbackFunctionWithBool);
 
     // Note that set_ir_command_callback is useful for development purposes but you should not have to use this function for normal gameplay
     void set_ir_command_callback(CallbackFunctionWithInt);
@@ -173,6 +183,7 @@ class Tank
     const int16_t normalize_angle(const int16_t degrees);
 
     MiniLed _tank_led;
+    MiniTone _mini_tone;
 
   private:
     void _process_interrupt_flags(unsigned long current_millis);
@@ -220,8 +231,8 @@ class Tank
     struct TankStatus _tank_status;
     struct BattleStatus _battle_status;
 
-    CallbackFunction _bump_front_callback = NULL;
-    CallbackFunction _bump_rear_callback = NULL;
+    CallbackFunctionWithBool _bump_front_callback = NULL;
+    CallbackFunctionWithBool _bump_rear_callback = NULL;
     CallbackFunction _drive_target_callback = NULL;
 };
 

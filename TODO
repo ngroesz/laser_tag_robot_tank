@@ -1,8 +1,10 @@
 - calibrate WHEEL_ENCODER_DISTANCE_RATIO
 - consider to add motor stall detection
 - if one drive motor is in wait mode, the other drive motor should probably also wait. the effects of the lag can be most easily demonstrated with the motor_stress_test.
+- also, make sure that a motor can spin-up without delay, assuming that it has been off
 - implement "game" logic like hit count, shot delay, etc.
 - maybe make degrees be from 1-360, that way target sentinels could match
 - look at clang-format for comment formatting
 - consider to move MiniTone/MiniLed to their own repos (will require using submodules)
 - rear bump seems to trigger right wheel encoder. i do not know why this. it's maybe not a huge problem but feels wrong.
+- consider to simplify mini_led library: each led is either on, off, or blinking

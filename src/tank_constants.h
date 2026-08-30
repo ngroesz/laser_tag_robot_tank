@@ -18,7 +18,7 @@
 // you may wish to do programming/debugging without the motors enabled, if so comment-out this flag
 // if you are programming with just a 5V USB connecting cable and no batteries connected to the motor power
 // supply, then you should definitely comment-out this flag
-//#define MOTORS_ENABLED
+#define MOTORS_ENABLED
 
 // if you want to control the LEDs yourself, and do not want the Tank class to mess with them, you can remove this flag
 #define LEDS_ENABLED
@@ -34,11 +34,13 @@
 // delay between motor changing directions. to reduce strain on motors. i'm uncertain what the best
 // delay is. it should certainly be more than 0. i'm fairly certain it can be less than 1000 (1 second)
 // the idea is that a motor should stop spinning before applying opposite polarity.
-#define MOTOR_CHANGE_DIRECTION_DELAY_MILLIS 750
+#define MOTOR_CHANGE_DIRECTION_DELAY_MILLIS 500
+
 // if no speed is specified
 #define MOTOR_DEFAULT_SPEED 255
+
 // the ratio of turret drive encoder counts and one degree of angle.
-// it is empirically-derived and not precise
+// it is empirically-derived and not precise.
 // the larger this number is, the farther the turret will travel to achieve one degree
 // of angle change.
 #define TURRET_GEAR_RATIO 1.36

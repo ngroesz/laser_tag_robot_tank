@@ -19,11 +19,14 @@ PVision ircam;
 VL53L0X distance_sensor;
 
 byte camera_result;
+bool target_active;
+uint16_t target_x;
 
 typedef void (*ModeFunction) ();
 ModeFunction mode_function = NULL;
 
 int last_ir_command;
+bool state_switched = false;
 
 unsigned long last_distance_read_millis = 0;
 unsigned long last_camera_read_millis = 0;
@@ -47,17 +50,33 @@ void setup()
   // are doing so as part of debugging feedback that you will eventually remove.
   uint8_t pins[] = {LED_PIN_1, LED_PIN_2, LED_PIN_3};
   tank_led.setup(pins, LOW);
-  tank_led.all_off();
 
   tank.set_ir_command_callback(process_ir_command);
 #ifdef DEBUG_OUTPUT
   Serial.println(F("Tank initialized."));
 #endif
+
+  initialize();
+}
+
+void initialize()
+{
+  tank.set_bump_front_callback(NULL);
+  tank.set_bump_rear_callback(NULL);
+
+  tank_led.all_off();
+
+  camera_init();
+  distance_sensor_init();
 }
 
 void loop()
 {
   if (mode_function) {
+    if (state_switched) {
+      initialize();
+      state_switched = false;
+    }
     mode_function();
   }
   tank.loop();
@@ -71,6 +90,8 @@ void camera_init()
 #ifdef DEBUG_OUTPUT
   Serial.println(F("Camera initialized."));
 #endif
+
+  target_active = false;
 }
 
 void distance_sensor_init()
@@ -191,39 +212,40 @@ void turret_measured_test()
   }
 }
 
-void turret_calibration_test()
+void setup_routine_test()
 {
-  switch (last_ir_command) {
-    case IR_CODE_OK:
-      tank.turret_calibrate();
-      last_ir_command = 0;
-      break;
-  }
+  tank.setup_routine();
 }
 
 void led_test()
 {
   switch (last_ir_command) {
     case IR_CODE_UP:
+      Serial.println("led test: all on");
       tank_led.all_on();
       last_ir_command = 0;
       break;
     case IR_CODE_LEFT:
+      Serial.println("led test: led 1 on");
+      tank_led.all_on();
       tank_led.all_off();
       tank_led.on(0);
       last_ir_command = 0;
       break;
     case IR_CODE_DOWN:
+      Serial.println("led test: led 2 on");
       tank_led.all_off();
       tank_led.on(1);
       last_ir_command = 0;
       break;
     case IR_CODE_RIGHT:
+      Serial.println("led test: led 3 on");
       tank_led.all_off();
       tank_led.on(2);
       last_ir_command = 0;
       break;
     case IR_CODE_OK:
+      Serial.println("led test: all off");
       tank_led.all_off();
       last_ir_command = 0;
       break;
@@ -268,7 +290,30 @@ void camera_test()
       Serial.print(ircam.Blob1.Y);
       Serial.print(F(" Size:"));
       Serial.println(ircam.Blob1.Size);
+
+      target_x = ircam.Blob1.X;
+      target_active = true;
+    } else {
+      target_active = false;
     }
+  }
+
+  if (target_active) {
+    if (target_x < 462) {
+      tank_led.all_off();
+      tank_led.on(0);
+      tank.turret_right();
+    } else if (target_x > 562) {
+      tank_led.all_off();
+      tank_led.on(2);
+      tank.turret_left();
+    } else {
+      tank_led.all_on();
+      tank.turret_stop();
+    }
+  } else {
+    tank_led.all_off();
+    tank.turret_stop();
   }
 }
 
@@ -284,7 +329,26 @@ void speaker_test()
 
 void bump_test()
 {
-  // TODO
+  tank.set_bump_front_callback(bump_test_front_callback);
+  tank.set_bump_rear_callback(bump_test_rear_callback);
+}
+
+void bump_test_front_callback(bool state)
+{
+  if (state) {
+    tank_led.on(0);
+  } else {
+    tank_led.off(0);
+  }
+}
+
+void bump_test_rear_callback(bool state)
+{
+  if (state) {
+    tank_led.on(1);
+  } else {
+    tank_led.off(1);
+  }
 }
 
 void process_ir_command(int ir_command)
@@ -301,6 +365,7 @@ void process_ir_command(int ir_command)
       Serial.println(F("Drive Test"));
 #endif
       mode_function = drive_test;
+      state_switched = true;
       last_ir_command = 0;
       break;
 
@@ -309,6 +374,7 @@ void process_ir_command(int ir_command)
       Serial.println(F("Drive Measured Test"));
 #endif
       mode_function = drive_measured_test;
+      state_switched = true;
       last_ir_command = 0;
       break;
 
@@ -317,6 +383,7 @@ void process_ir_command(int ir_command)
       Serial.println(F("Turret Test"));
 #endif
       mode_function = turret_test;
+      state_switched = true;
       last_ir_command = 0;
       break;
 
@@ -325,14 +392,16 @@ void process_ir_command(int ir_command)
       Serial.println(F("Turret Measured Test"));
 #endif
       mode_function = turret_measured_test;
+      state_switched = true;
       last_ir_command = 0;
       break;
 
     case IR_CODE_FIVE:
 #ifdef DEBUG_OUTPUT
-      Serial.println(F("Turret Calibration Test"));
+      Serial.println(F("Setup routine"));
 #endif
-      mode_function = turret_calibration_test;
+      mode_function = setup_routine_test;
+      state_switched = true;
       last_ir_command = 0;
       break;
 
@@ -341,8 +410,8 @@ void process_ir_command(int ir_command)
       Serial.println(F("Distance Sensor Test"));
 #endif
       mode_function = distance_sensor_test;
+      state_switched = true;
       last_ir_command = 0;
-      distance_sensor_init();
       break;
 
     case IR_CODE_SEVEN:
@@ -350,8 +419,8 @@ void process_ir_command(int ir_command)
       Serial.println(F("Camera Test"));
 #endif
       mode_function = camera_test;
+      state_switched = true;
       last_ir_command = 0;
-      camera_init();
       break;
 
    case IR_CODE_EIGHT:
@@ -359,6 +428,7 @@ void process_ir_command(int ir_command)
       Serial.println(F("LED Test"));
 #endif
       mode_function = led_test;
+      state_switched = true;
       last_ir_command = 0;
       break;
 
@@ -367,6 +437,7 @@ void process_ir_command(int ir_command)
       Serial.println(F("Speaker Test"));
 #endif
       mode_function = speaker_test;
+      state_switched = true;
       last_ir_command = 0;
       break;
 
@@ -375,6 +446,7 @@ void process_ir_command(int ir_command)
       Serial.println(F("Bump Test"));
 #endif
       mode_function = bump_test;
+      state_switched = true;
       last_ir_command = 0;
       break;
 

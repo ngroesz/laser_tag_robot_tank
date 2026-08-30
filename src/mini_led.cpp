@@ -101,11 +101,6 @@ void MiniLed::_led_off(struct Led & _led)
 void MiniLed::_update_led(struct Led & _led)
 {
   if (_current_millis > _led.next_blink_change) {
-    Serial.print("current_millis: ");
-    Serial.println(_current_millis);
-  
-    _print_led_state(_led);
-
     ++_led.current_blink_index;
     ++_led.blink_count;
     if (_led.current_blink_index == _led.blinks_size) {
@@ -113,52 +108,17 @@ void MiniLed::_update_led(struct Led & _led)
     }
 
     if(_led.current_blink_index % 2 == 0) {
-      Serial.println("led on");
       // turn the LED on
       digitalWrite(_led.led_pin, _on_state);
     } else {
-      Serial.println("led off");
       // turn the LED off
       digitalWrite(_led.led_pin, _off_state);
 
       // if we've reached max_blinks, re-initialize the LED, thus ending blinks
       if (_led.max_blinks > 0 && _led.blink_count >= _led.max_blinks) {
-        Serial.print("blink count: ");
-        Serial.println(_led.blink_count);
         _reset_led(_led);
       }
     }
     _led.next_blink_change = _current_millis + _led.blinks[_led.current_blink_index];
-    Serial.print("new next_blink_change: ");
-    Serial.println(_led.next_blink_change);
   }
-}
-
-// TODO: remove me
-void MiniLed::_print_led_state(struct Led & _led)
-{
-  Serial.print("State of LED for pin: ");
-  Serial.println(_led.led_pin);
-
-  Serial.print("blink_count: ");
-  Serial.println(_led.blink_count);
-  
-  Serial.print("max_blinks: ");
-  Serial.println(_led.max_blinks);
-
-  Serial.print("current_blink_index: ");
-  Serial.println(_led.current_blink_index);
-
-  Serial.print("next_blink_change: ");
-  Serial.println(_led.current_blink_index);
-
-  Serial.print("blinks_size: ");
-  Serial.println(_led.blinks_size);
-
-  Serial.print("blinks: ");
-  for (int i = 0; i < _led.blinks_size; ++i) {
-    Serial.print(_led.blinks[i]);
-    Serial.print("\t");
-  }
-  Serial.println("");
 }

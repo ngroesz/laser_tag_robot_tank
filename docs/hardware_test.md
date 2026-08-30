@@ -30,8 +30,9 @@ functions of the tank within the mode.
 | 2 | Drive Measured | Drive motors, wheel encoders |  Up: drive forward 10 cm <br /> Down: drive backwards 10 cm<br /> Right: turn right 90 degrees <br /> Left: turn left 90 degrees<br /> OK: Stop|
 | 3 | Turret | Turret motor | Left: Turret left <br /> Right: Turret right <br /> OK: Turret stop|
 | 4 | Turret Measured | Turret motor, turret encoder | Left: Turret left 90 degrees <br /> Right: Turret right 90 degrees<br /> OK: Turret stop|
-| 5 | Turret Calibration | Turret motor, turret encoder | OK: Turret will turn until it faces the 0-degree position|
+| 5 | Setup Routine | Turret motor, turret encoder | Pressing OK repeatedly will prompt the tank through the setup routine <br /> First OK: Turret will turn until calibrated. <br /> Second OK: Tank will be in active battle mode |
 | 6 | Distance | Distance sensor | Hold your hand or some object in front of the turret. You should see the tank's red LEDs illuminate based on distance from the turret. <br /> More than 750 mm: LED 1  <br /> Between 250 and 750 mm: LED 1 and 2 <br /> Less than 250 mm: LED 1, 2, and 3 |
 | 7 | Camera | IR camera, turret motor | Hold an IR LED in front of the tank turret. The turret should track the IR light source back and forth as it is moved. |
 | 8 | LED | Addressable LEDs | Tank has one green LED that is illuminated whenever the tank is switched on. Three red LEDs are addressable. <br /> Up: All LEDs on <br /> Left: LED 1 on <br /> Down: LED 2 on <br /> Right: LED 3 on <br /> OK: All LEDs off |
 | 9 | Speaker | Speaker | Press OK and the tank should make a noise |
+| 0 | Bump | Front and rear bump sensors | Press a bumper. Front bumper should illuminate LED 1. Rear bumper will illuminate LED 2. |

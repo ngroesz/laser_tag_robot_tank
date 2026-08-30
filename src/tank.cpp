@@ -59,6 +59,8 @@ void Tank::initialize()
   uint8_t pins[] = {LED_PIN_1, LED_PIN_2, LED_PIN_3};
   _tank_led.setup(pins, LOW);
   _tank_led.on(0);
+
+  _mini_tone.setup(SPEAKER_PIN);
   delay(250);
 
   // initialize motors
@@ -147,33 +149,41 @@ void Tank::setup_routine() {
 
   _tank_led.set_blinks(2, (const uint16_t[]){500, 500}, 2);
 
+#ifdef TANK_DEBUG_OUTPUT
+    Serial.println(F("Waiting for OK"));
+#endif
+
   do {
     loop();
   } while(_ir_status.last_command != IR_CODE_OK);
   _ir_status.last_command = 0;
 
-  _initialize_battle_status();
+#ifdef TANK_DEBUG_OUTPUT
+    Serial.println(F("Now I am battling"));
+#endif
 
-  _tank_led.all_off();
+  _initialize_battle_status();
+  _set_leds_to_hit_count();
 }
 
 void Tank::loop() {
   unsigned long current_millis = millis();
 
+  _process_interrupt_flags(millis());
   _update_motors();
   _tank_led.loop();
-  _process_interrupt_flags(millis());
+  _mini_tone.loop();
 }
 
 TankStatus Tank::get_status() {
   return _tank_status;
 }
 
-void Tank::set_bump_front_callback(CallbackFunction callback) {
+void Tank::set_bump_front_callback(CallbackFunctionWithBool callback) {
   _bump_front_callback = callback;
 }
 
-void Tank::set_bump_rear_callback(CallbackFunction callback) {
+void Tank::set_bump_rear_callback(CallbackFunctionWithBool callback) {
   _bump_rear_callback = callback;
 }
 
@@ -184,9 +194,12 @@ void Tank::set_ir_command_callback(CallbackFunctionWithInt callback) {
 void Tank::fire() {
   if (_last_fire_millis + RELOAD_MILLIS > millis()) {
     sendNEC(IR_SEND_PIN, 0x0, IR_CODE_ASTERISK, 0);
+#ifdef SOUND_ENABLED
+    tone(SPEAKER_PIN, 150, 750);
+#endif
   }
 
-  // it is intentional that _last_fire_millis is set whether or not the tank actually fired
+  // it is intentional that _last_fire_millis is set whether or not the tank actually fired.
   // this is to prevent bots from spamming the fire() button
   _last_fire_millis = millis();
 }
@@ -464,7 +477,7 @@ void Tank::_write_motor_control_code(const unsigned char & control_code) {
   Serial.println(control_code, BIN);
 #endif
 
-  if (!paused) {
+  if (!_paused) {
     digitalWrite(SHIFT_CLEAR_PIN, LOW);
     shiftOut(SHIFT_DATA_PIN, SHIFT_CLOCK_PIN, MSBFIRST, control_code);
     digitalWrite(SHIFT_CLEAR_PIN, HIGH);
@@ -557,13 +570,9 @@ void Tank::_process_bump_flags(unsigned long current_millis) {
     Serial.print(F("Bump front status: "));
     Serial.println(_bump_front_interrupt_flag);
 #endif
-    if (_bump_front_interrupt_flag == FALLING) {
-      _tank_status.bump_front = true;
-      if (_bump_front_callback) {
-        _bump_front_callback();
-      }
-    } else {
-      _tank_status.bump_front = false;
+    if (_bump_front_callback) {
+      bool bump_front = _bump_front_interrupt_flag == FALLING ? true : false;
+      _bump_front_callback(bump_front);
     }
   }
 
@@ -573,10 +582,9 @@ void Tank::_process_bump_flags(unsigned long current_millis) {
     Serial.print(F("Bump rear status: "));
     Serial.println(_bump_rear_interrupt_flag);
 #endif
-    if (_bump_rear_interrupt_flag == FALLING) {
-      _tank_status.bump_rear = true;
-    } else {
-      _tank_status.bump_rear = false;
+    if (_bump_rear_callback) {
+      bool bump_rear = _bump_rear_interrupt_flag == FALLING ? true : false;
+      _bump_rear_callback(bump_rear);
     }
   }
 }
@@ -704,27 +712,44 @@ void Tank::_maybe_register_hit() {
   if (_battle_status.hit_count == 4) {
     _game_over();
   } else {
+#ifdef SOUND_ENABLED
+    tone(SPEAKER_PIN, 600, 750);
+#endif
     _set_leds_to_hit_count();
   }
 }
 
 void Tank::_game_over() {
+#ifdef SOUND_ENABLED
+  uint16_t tones[] = {294, 500, 277, 500, 262, 500, 220, 2000};
+  _mini_tone.play(tones, sizeof(tones) / sizeof(tones[0]));
+#endif
+  _tank_led.set_blinks(0, (const uint16_t[]){500, 500}, 2);
+  _tank_led.set_blinks(1, (const uint16_t[]){500, 500}, 2);
+  _tank_led.set_blinks(2, (const uint16_t[]){500, 500}, 2);
 }
 
 void Tank::_set_leds_to_hit_count() {
+#ifdef TANK_DEBUG_OUTPUT
+  Serial.print(F("Setting leds to hit count "));
+  Serial.println(_battle_status.hit_count);
+#endif
   _tank_led.all_off();
   switch (_battle_status.hit_count) {
+    case 0:
+      _tank_led.all_off();
+      break;
     case 1:
-      _tank_led.on(1);
+      _tank_led.on(0);
       break;
     case 2:
+      _tank_led.on(0);
       _tank_led.on(1);
-      _tank_led.on(2);
       break;
     case 3:
+      _tank_led.on(0);
       _tank_led.on(1);
       _tank_led.on(2);
-      _tank_led.on(3);
   }
 }
 
@@ -732,6 +757,7 @@ void Tank::_set_leds_to_hit_count() {
 void Tank::_pause_unpause() {
   if (_paused) {
     _paused = false;
+    _set_leds_to_hit_count();
   } else {
     _paused = true;
     _tank_led.set_blinks(0, (const uint16_t[]){500, 500}, 2);
