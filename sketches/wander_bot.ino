@@ -91,6 +91,7 @@ void setup()
   Serial.println("finished setup");
 }
 
+// TODO: pause/unpause should be part of main tank library
 void process_ir_command(uint16_t command)
 {
   if (command == IR_CODE_POUND) {

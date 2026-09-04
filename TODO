@@ -8,3 +8,4 @@
 - consider to move MiniTone/MiniLed to their own repos (will require using submodules)
 - rear bump seems to trigger right wheel encoder. i do not know why this. it's maybe not a huge problem but feels wrong.
 - consider to simplify mini_led library: each led is either on, off, or blinking
+- turret movement codes need changed if i go with the low-speed turret gearing

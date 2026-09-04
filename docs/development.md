@@ -85,6 +85,15 @@ done in this way. All functions of the tank work but it will not drive off
 anywhere.  You can also try placing something under the tank in order to
 high-center it but I think it's easiest to just remove the tracks.
 
+In relation to that, avoid activating the motors in a sketch without receiving
+some input first. It can happen that an FTDI cable is plugged-in without the
+tank power being turned on, and thus the motors will be attempting to run using
+only five volt USB power, which will be a strain. It is better to wait for some
+command until the tank begins to use the drive motors or turret.
+
+If you are going to be programming using just the FTDI connection and no battery
+power, you can temporarily comment-out MOTORS_ENABLED such that the motors will
+not attempt to turn.
 
 ### Coding A Real-Time System
 

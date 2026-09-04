@@ -1,1 +1,1 @@
-sketches/motor_stress_test.ino
+../reserved/laser_tag_robot_tank/combat_bot.ino
