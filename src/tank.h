@@ -8,7 +8,6 @@
 
 #include "ir_codes.h"
 #include "mini_led.h"
-#include "mini_tone.h"
 #include "pins.h"
 #include "tank_constants.h"
 
@@ -183,7 +182,6 @@ class Tank
     const int16_t normalize_angle(const int16_t degrees);
 
     MiniLed _tank_led;
-    MiniTone _mini_tone;
 
   private:
     void _process_interrupt_flags(unsigned long current_millis);

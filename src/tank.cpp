@@ -60,7 +60,6 @@ void Tank::initialize()
   _tank_led.setup(pins, LOW);
   _tank_led.on(0);
 
-  _mini_tone.setup(SPEAKER_PIN);
   delay(250);
 
   // initialize motors
@@ -172,7 +171,6 @@ void Tank::loop() {
   _process_interrupt_flags(millis());
   _update_motors();
   _tank_led.loop();
-  _mini_tone.loop();
 }
 
 TankStatus Tank::get_status() {
@@ -721,8 +719,7 @@ void Tank::_maybe_register_hit() {
 
 void Tank::_game_over() {
 #ifdef SOUND_ENABLED
-  uint16_t tones[] = {294, 500, 277, 500, 262, 500, 220, 2000};
-  _mini_tone.play(tones, sizeof(tones) / sizeof(tones[0]));
+  tone(SPEAKER_PIN, 220, 2000);
 #endif
   _tank_led.set_blinks(0, (const uint16_t[]){500, 500}, 2);
   _tank_led.set_blinks(1, (const uint16_t[]){500, 500}, 2);
