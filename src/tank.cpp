@@ -38,7 +38,8 @@ void _bump_rear_interrupt() {
 }
 
 void handleReceivedTinyIRData() {
-  if (TinyIRReceiverData.Flags != IRDATA_FLAGS_IS_REPEAT && TinyIRReceiverData.Flags != IRDATA_FLAGS_PARITY_FAILED) {
+  //if (TinyIRReceiverData.Flags != IRDATA_FLAGS_IS_REPEAT && TinyIRReceiverData.Flags != IRDATA_FLAGS_PARITY_FAILED) {
+  if (TinyIRReceiverData.Flags != IRDATA_FLAGS_PARITY_FAILED) {
     _ir_command_received = true;
     _ir_command = TinyIRReceiverData.Command;
   }
@@ -119,6 +120,7 @@ void Tank::initialize()
   _bump_status.bump_front = 0;
   _bump_status.bump_rear = 0;
 
+  pinMode(IR_RECEIVE_PIN, INPUT_PULLUP);
   if (!initPCIInterruptForTinyReceiver()) {
 #ifdef TANK_DEBUG_OUTPUT
     Serial.println(F("could not initialize IR"));
@@ -136,6 +138,10 @@ void Tank::setup_routine() {
   _tank_led.all_off();
   _tank_led.set_blinks(0, (const uint16_t[]){500, 500}, 2);
 
+#ifdef TANK_DEBUG_OUTPUT
+    Serial.println(F("Waiting for OK to start turret calibration"));
+#endif
+
   do {
     loop();
   } while(_ir_status.last_command != IR_CODE_OK);
@@ -149,7 +155,7 @@ void Tank::setup_routine() {
   _tank_led.set_blinks(2, (const uint16_t[]){500, 500}, 2);
 
 #ifdef TANK_DEBUG_OUTPUT
-    Serial.println(F("Waiting for OK"));
+    Serial.println(F("Waiting for OK to begin battle"));
 #endif
 
   do {
@@ -158,7 +164,7 @@ void Tank::setup_routine() {
   _ir_status.last_command = 0;
 
 #ifdef TANK_DEBUG_OUTPUT
-    Serial.println(F("Now I am battling"));
+    Serial.println(F("Now I am battlin'"));
 #endif
 
   _initialize_battle_status();
@@ -187,6 +193,10 @@ void Tank::set_bump_rear_callback(CallbackFunctionWithBool callback) {
 
 void Tank::set_ir_command_callback(CallbackFunctionWithInt callback) {
   _ir_status.ir_command_callback = callback;
+}
+
+void Tank::set_hit_callback(CallbackFunctionWithInt callback) {
+  _hit_callback = callback;
 }
 
 void Tank::fire() {
@@ -591,6 +601,10 @@ void Tank::_process_ir_flags() {
   if (_ir_command_received) {
     _ir_command_received = false;
     _ir_status.last_command = _ir_command;
+#ifdef TANK_DEBUG_OUTPUT
+    Serial.print(F("IR command received: "));
+    Serial.println(_ir_status.last_command);
+#endif
 
     if (_ir_status.last_command == IR_CODE_ASTERISK) {
       _maybe_register_hit();
@@ -710,6 +724,9 @@ void Tank::_maybe_register_hit() {
   if (_battle_status.hit_count == 4) {
     _game_over();
   } else {
+    if (_hit_callback) {
+      _hit_callback(_battle_status.hit_count);
+    }
 #ifdef SOUND_ENABLED
     tone(SPEAKER_PIN, 600, 750);
 #endif

@@ -163,7 +163,14 @@ Serial.println("Robot initialized."); ```
 The F() macro causes strings to be stored in the flash memory space, instead of
 SRAM.
 
-### Common Pitfalls
+### Things To Note
+
+#### PVision field of view
+
+If there is an active target, ircam.read() returns Cartesian coordinates where
+X is an integer between 0 and 1023 and Y is an integer between 0 and 767.
+
+It is important to note that X INCREASES from right to left, contrary to convention.
 
 #### Variable Types
 

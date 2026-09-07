@@ -47,7 +47,7 @@ struct MotorStatus {
 
 // though we mostly only care whether the bumper switch is activated or not,
 // we use a uint8_t to track the status since the PinChangeInterrupt gives us
-// a ternary value of RISING/FALLING/CHANGE and we want to know when this 
+// a ternary value of RISING/FALLING/CHANGE and we want to know when this
 // value has changed
 struct BumpStatus {
   uint8_t bump_front = 0;
@@ -139,8 +139,10 @@ class Tank
     */
     void set_bump_rear_callback(CallbackFunctionWithBool);
 
-    // Note that set_ir_command_callback is useful for development purposes but you should not have to use this function for normal gameplay
+    // IMPORTANT: set_ir_command_callback can be useful for development purposes but you should not have to use this function for normal gameplay
     void set_ir_command_callback(CallbackFunctionWithInt);
+
+    void set_hit_callback(CallbackFunctionWithInt);
 
     /* @brief Fire laser cannon
     *
@@ -174,6 +176,7 @@ class Tank
     void turret_stop();
     const int16_t turret_get_degrees();
     // TODO: we might end up using this?
+    // (but probably not, probably this will be part of a tank-status return value)
     const bool turret_has_been_calibrated();
 
     TankStatus get_status();
@@ -232,6 +235,7 @@ class Tank
     CallbackFunctionWithBool _bump_front_callback = NULL;
     CallbackFunctionWithBool _bump_rear_callback = NULL;
     CallbackFunction _drive_target_callback = NULL;
+    CallbackFunctionWithInt _hit_callback = NULL;
 };
 
 #endif

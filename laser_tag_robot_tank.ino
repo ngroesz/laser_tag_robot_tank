@@ -1,1 +1,1 @@
-../reserved/laser_tag_robot_tank/combat_bot.ino
+sketches/hardware_test.ino
