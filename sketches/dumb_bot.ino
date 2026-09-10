@@ -6,8 +6,13 @@ A bot that finds and attacks a target. Not a particularly cunning foe.
 #include <VL53L0X.h>
 #include <Wire.h>
 
-#include "constants.h"
 #include "src/tank.h"
+
+//#define CAMERA_ENABLED
+#define CAMERA_READ_DELAY 100
+//#define DISTANCE_ENABLED
+#define DISTANCE_MAX 8190
+#define DISTANCE_READ_DELAY 100
 
 unsigned long last_update_millis = 0;
 

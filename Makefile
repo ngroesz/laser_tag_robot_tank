@@ -1,8 +1,6 @@
 BOARD = arduino:avr:uno
 PATH = $(PWD)
-# won't work with FTDI
 $(eval PORT=$(shell sh -c "arduino-cli board list | grep -E 'arduino:avr|Serial Port \(USB\)'" | awk '{print $$1}'))
-#PORT = "/dev/ttyUSB0"
 
 compile:
 	/usr/local/bin/arduino-cli compile --library $(PWD)/src -b $(BOARD) $(PATH)

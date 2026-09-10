@@ -1,11 +1,19 @@
-- calibrate WHEEL_ENCODER_DISTANCE_RATIO
-- consider to add motor stall detection
-- if one drive motor is in wait mode, the other drive motor should probably also wait. the effects of the lag can be most easily demonstrated with the motor_stress_test.
-- also, make sure that a motor can spin-up without delay, assuming that it has been off
-- implement "game" logic like hit count, shot delay, etc.
-- maybe make degrees be from 1-360, that way target sentinels could match
-- look at clang-format for comment formatting
-- consider to move MiniTone/MiniLed to their own repos (will require using submodules)
-- rear bump seems to trigger right wheel encoder. i do not know why this. it's maybe not a huge problem but feels wrong.
-- consider to simplify mini_led library: each led is either on, off, or blinking
-- turret movement codes need changed if i go with the low-speed turret gearing
+Drive motor stuff:
+  - consider to verify that wheel encoder changes are all valid - would require recalibrating WHEEL_ENCODER_DISTANCE_RATIO
+  - consider to add motor stall detection
+  - if one drive motor is in wait mode, the other drive motor should probably also wait. the effects of the lag can be most easily demonstrated with the motor_stress_test.
+  - also, make sure that a motor can spin-up without delay, assuming that it has been off
+  - turret movement codes need changed if i go with the low-speed turret gearing
+
+Battle stuff:
+  - implement "game" logic like hit count, shot delay, etc.
+
+Internal cleanup:
+  - maybe make degrees be from 1-360, that way target sentinels could match
+  - look at clang-format for comment formatting
+  - consider to move MiniTone/MiniLed to their own repos (will require using submodules)
+  - consider to simplify mini_led library: each led is either on, off, or blinking
+
+Gremlins:
+  - rear bump seems to trigger right wheel encoder. i do not know why this. it's maybe not a huge problem but feels wrong.
+    UPDATE: I think blue tank has some problem with right wheel encoder. red tank seems to work fine

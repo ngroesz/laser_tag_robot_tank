@@ -16,10 +16,14 @@ Could improve object distance tracking as noted in recon() function
 #include <VL53L0X.h>
 #include <Wire.h>
 
-#include "constants.h"
 #include "src/tank.h"
 
-#define SENSOR_READ_DELAY 100
+
+//#define CAMERA_ENABLED
+#define CAMERA_READ_DELAY 100
+//#define DISTANCE_ENABLED
+#define DISTANCE_MAX 8190
+#define DISTANCE_SENSOR_READ_DELAY 100
 #define MAX_VALID_DISTANCE 8192
 
 // Changing RADAR_SECTIONS to a higher number will allow for a more fine-grained view of obstacles,
@@ -74,7 +78,7 @@ void setup()
 #endif
     while (1) {}
   }
-  sensor.startContinuous(SENSOR_READ_DELAY);
+  sensor.startContinuous(DISTANCE_SENSOR_READ_DELAY);
 #ifdef DEBUG_OUTPUT
   Serial.println(F("Distance sensor initialized."));
 #endif
@@ -129,7 +133,7 @@ void begin_recon()
 
 void recon()
 {
-  if (millis() > last_distance_update_millis + SENSOR_READ_DELAY) {
+  if (millis() > last_distance_update_millis + DISTANCE_SENSOR_READ_DELAY) {
     uint16_t distance;
     if (find_distance(distance)) {
       // Assuming the turret has been calibrated, turret_get_degrees returns a number between 0 and 359, inclusive.

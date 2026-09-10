@@ -51,7 +51,7 @@
 // this will never be perfect because the tracks can slip somewhat
 // and because the wheel encoders have a limited number of poles, which affects
 // resolution
-#define WHEEL_ENCODER_DISTANCE_RATIO 2
+#define WHEEL_ENCODER_DISTANCE_RATIO .75
 
 // this number determines the relationship between wheel encoder count and degrees turned
 // for example, when calculating right turn for N degrees the formula is:

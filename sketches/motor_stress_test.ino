@@ -21,12 +21,12 @@
 #include <VL53L0X.h>
 #include <Wire.h>
 
-#include "constants.h"
 #include "src/ir_codes.h"
 #include "src/pins.h"
 #include "src/tank_constants.h"
 #include "src/tank.h"
 
+#define DEBUG_OUTPUT
 #define DRIVE_CHANGE_DELAY 5000
 
 Tank tank;
