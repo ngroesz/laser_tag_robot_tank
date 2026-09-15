@@ -74,26 +74,30 @@ void Tank::initialize()
   pinMode(SHIFT_DATA_PIN, OUTPUT);
 
   _left_motor_status = {
-    .direction = motor_stop,
-    .requested_direction = motor_stop,
-    .last_direction = motor_stop,
+    .direction = stop,
+    .requested_direction = stop,
+    .last_direction = stop,
     .direction_change_requested = false,
-    .direction_change_request_millis = 0
+    .direction_change_request_millis = 0,
+    .last_encoder_millis = 0
   };
   _right_motor_status = {
-    .direction = motor_stop,
-    .requested_direction = motor_stop,
-    .last_direction = motor_stop,
+    .direction = stop,
+    .requested_direction = stop,
+    .last_direction = stop,
     .direction_change_requested = false,
-    .direction_change_request_millis = 0
+    .direction_change_request_millis = 0,
+    .last_encoder_millis = 0
   };
   _turret_motor_status = {
-    .direction = motor_stop,
-    .requested_direction = motor_stop,
-    .last_direction = motor_stop,
+    .direction = stop,
+    .requested_direction = stop,
+    .last_direction = stop,
     .direction_change_requested = false,
-    .direction_change_request_millis = 0
+    .direction_change_request_millis = 0,
+    .last_encoder_millis = 0
   };
+  _motor_stall_detection_enabled = true;
 
   _tank_led.on(1);
   delay(250);
@@ -172,10 +176,10 @@ void Tank::setup_routine() {
 }
 
 void Tank::loop() {
-  unsigned long current_millis = millis();
+  uint32_t current_millis = millis();
 
   _process_interrupt_flags(millis());
-  _update_motors();
+  _update_motors(current_millis);
   _tank_led.loop();
 }
 
@@ -215,7 +219,7 @@ void Tank::fire() {
 void Tank::drive_forward(const uint8_t speed) {
   _tank_status.drive_target_distance = 0;
   _tank_status.drive_target_degrees = -1;
-  _drive(motor_forward, motor_forward, speed);
+  _drive(forward, forward, speed);
 }
 
 void Tank::drive_forward_target(const int16_t target_distance, CallbackFunction target_callback, const uint8_t speed) {
@@ -224,13 +228,13 @@ void Tank::drive_forward_target(const int16_t target_distance, CallbackFunction 
   _tank_status.drive_target_distance_reached = false;
   _tank_status.drive_target_distance = target_distance;
   _drive_target_callback = target_callback;
-  _drive(motor_forward, motor_forward, speed);
+  _drive(forward, forward, speed);
 }
 
 void Tank::drive_reverse(const uint8_t speed) {
   _tank_status.drive_target_distance = 0;
   _tank_status.drive_target_degrees = -1;
-  _drive(motor_reverse, motor_reverse, speed);
+  _drive(reverse, reverse, speed);
 }
 
 void Tank::drive_reverse_target(const int16_t target_distance, CallbackFunction target_callback, const uint8_t speed) {
@@ -239,19 +243,19 @@ void Tank::drive_reverse_target(const int16_t target_distance, CallbackFunction 
   _tank_status.drive_target_distance_reached = false;
   _tank_status.drive_target_distance = -target_distance;
   _drive_target_callback = target_callback;
-  _drive(motor_reverse, motor_reverse, speed);
+  _drive(reverse, reverse, speed);
 }
 
 void Tank::drive_turn_left(uint8_t speed) {
   _tank_status.drive_target_distance = 0;
   _tank_status.drive_target_degrees = -1;
-  _drive(motor_reverse, motor_forward, speed);
+  _drive(reverse, forward, speed);
 }
 
 void Tank::drive_turn_right(uint8_t speed) {
   _tank_status.drive_target_distance = 0;
   _tank_status.drive_target_degrees = -1;
-  _drive(motor_forward, motor_reverse, speed);
+  _drive(forward, reverse, speed);
 }
 
 void Tank::drive_turn_degrees(int16_t degrees, CallbackFunction target_callback, uint8_t speed) {
@@ -272,7 +276,7 @@ void Tank::drive_turn_left_degrees(int16_t degrees, CallbackFunction target_call
   _tank_status.drive_target_degrees_reached = false;
   _tank_status.drive_target_degrees = -degrees % 360;
   _drive_target_callback = target_callback;
-  _drive(motor_reverse, motor_forward, speed);
+  _drive(reverse, forward, speed);
 }
 
 void Tank::drive_turn_right_degrees(int16_t degrees, CallbackFunction target_callback, uint8_t speed) {
@@ -282,7 +286,7 @@ void Tank::drive_turn_right_degrees(int16_t degrees, CallbackFunction target_cal
   _tank_status.drive_target_degrees_reached = false;
   _tank_status.drive_target_degrees = degrees % 360;
   _drive_target_callback = target_callback;
-  _drive(motor_forward, motor_reverse, speed);
+  _drive(forward, reverse, speed);
 }
 
 void Tank::drive_stop() {
@@ -378,7 +382,7 @@ void Tank::turret_set_degrees(const uint16_t target_degrees, CallbackFunction ta
 
 void Tank::turret_stop() {
   _turret_status.has_target = false;
-  _control_motor(_turret_motor_status, motor_stop);
+  _control_motor(_turret_motor_status, stop);
 }
 
 const int16_t Tank::turret_get_degrees() {
@@ -392,6 +396,14 @@ const int16_t Tank::turret_get_degrees() {
   return normalized_turret_position;
 }
 
+void Tank::motor_stall_detection_enable() {
+  _motor_stall_detection_enabled = true;
+}
+
+void Tank::motor_stall_detection_disable() {
+  _motor_stall_detection_enabled = false;
+}
+
 const bool Tank::turret_has_been_calibrated() {
   return _turret_status.calibrated;
 }
@@ -403,17 +415,18 @@ const int16_t Tank::normalize_angle(const int16_t degrees) {
 
 // begin private functions
 void Tank::_turret_left() {
-  _control_motor(_turret_motor_status, motor_reverse);
+  _control_motor(_turret_motor_status, reverse);
 }
 
 void Tank::_turret_right() {
-  _control_motor(_turret_motor_status, motor_forward);
+  _control_motor(_turret_motor_status, forward);
 }
 
-void Tank::_update_motors() {
-  uint8_t left_motor_control_code = _determine_motor_control_code(CONTROL_CODE_LEFT_MOTOR_FORWARD, CONTROL_CODE_LEFT_MOTOR_REVERSE, _left_motor_status);
-  uint8_t right_motor_control_code = _determine_motor_control_code(CONTROL_CODE_RIGHT_MOTOR_FORWARD, CONTROL_CODE_RIGHT_MOTOR_REVERSE, _right_motor_status);
-  uint8_t turret_motor_control_code = _determine_motor_control_code(CONTROL_CODE_TURRET_MOTOR_FORWARD, CONTROL_CODE_TURRET_MOTOR_REVERSE, _turret_motor_status);
+// this function is called from loop() and determines whether anything related to the motors should be updated
+void Tank::_update_motors(const uint32_t current_millis) {
+  uint8_t left_motor_control_code = _determine_motor_control_code(current_millis, CONTROL_CODE_LEFT_MOTOR_FORWARD, CONTROL_CODE_LEFT_MOTOR_REVERSE, _left_motor_status, DRIVE_MOTOR_STALL_DETECTION_MILLIS);
+  uint8_t right_motor_control_code = _determine_motor_control_code(current_millis, CONTROL_CODE_RIGHT_MOTOR_FORWARD, CONTROL_CODE_RIGHT_MOTOR_REVERSE, _right_motor_status, DRIVE_MOTOR_STALL_DETECTION_MILLIS);
+  uint8_t turret_motor_control_code = _determine_motor_control_code(current_millis, CONTROL_CODE_TURRET_MOTOR_FORWARD, CONTROL_CODE_TURRET_MOTOR_REVERSE, _turret_motor_status, DRIVE_MOTOR_STALL_DETECTION_MILLIS);
 
   uint8_t new_motor_control_code = left_motor_control_code | right_motor_control_code | turret_motor_control_code;
 
@@ -421,6 +434,8 @@ void Tank::_update_motors() {
 #ifdef TANK_DEBUG_OUTPUT
     Serial.print(F("writing new control_code "));
     Serial.println(new_motor_control_code);
+    Serial.print(F("current millis: "));
+    Serial.println(current_millis);
 #endif
     _current_motor_control_code = new_motor_control_code;
     _write_motor_control_code(_current_motor_control_code);
@@ -434,20 +449,47 @@ void Tank::_update_motors() {
   }
 
   if (motor_speed != _current_speed) {
+#ifdef TANK_DEBUG_OUTPUT
+    Serial.print(F("writing to MOTOR_PWM_PIN: "));
+    Serial.println(motor_speed);
+#endif
     analogWrite(MOTOR_PWM_PIN, motor_speed);
     _current_speed = motor_speed;
   }
 }
 
 // incorporate delay logic and return the appropriate control_code for the motor
-uint8_t Tank::_determine_motor_control_code(const uint8_t forward_code, const uint8_t reverse_code, MotorStatus & motor_status) {
+uint8_t Tank::_determine_motor_control_code(const uint32_t current_millis, const uint8_t forward_code, const uint8_t reverse_code, MotorStatus & motor_status, uint32_t motor_stall_detection_millis) {
+  if (_motor_stall_detection_enabled) {
+    // if a stall is active, don't update motors
+    if (_motor_stall_detection_activated) {
+      return 0;
+    }
+    if (motor_status.direction != stop
+      && motor_status.direction == motor_status.requested_direction
+      && motor_status.direction_change_request_millis + motor_stall_detection_millis < current_millis
+      && motor_status.last_encoder_millis + motor_stall_detection_millis < current_millis) {
+      // TODO: remove this debugging once stall detection is proven to work correctly
+      Serial.print("here motor stall detected: ");
+      Serial.println(current_millis);
+      Serial.print("direction_change_request_millis: ");
+      Serial.println(motor_status.direction_change_request_millis);
+      Serial.print("last_encoder_millis: ");
+      Serial.println(motor_status.last_encoder_millis);
+      Serial.print("motor_stall_detection_millis: ");
+      Serial.println(motor_stall_detection_millis);
+      _motor_stall_detected();
+      return 0;
+    }
+  }
+
   if (motor_status.direction_change_requested) {
     // if it is desired that the motor be traveling in the opposite direction and MOTOR_CHANGE_DIRECTION_DELAY_MILLIS has lapsed
     // then we change motor direction
-    if (millis() > motor_status.direction_change_request_millis + MOTOR_CHANGE_DIRECTION_DELAY_MILLIS) {
+    if (current_millis > motor_status.direction_change_request_millis + MOTOR_CHANGE_DIRECTION_DELAY_MILLIS) {
       motor_status.direction = motor_status.requested_direction;
       motor_status.direction_change_requested = false;
-      if (motor_status.direction != motor_stop) {
+      if (motor_status.direction != stop) {
         motor_status.last_direction = motor_status.direction;
       }
     // otherwise, control code is set to zero for this motor. the motor should stop before spinning the other direction.
@@ -456,9 +498,9 @@ uint8_t Tank::_determine_motor_control_code(const uint8_t forward_code, const ui
     }
   }
 
-  if (motor_status.direction == motor_forward) {
+  if (motor_status.direction == forward) {
     return forward_code;
-  } else if (motor_status.direction == motor_reverse) {
+  } else if (motor_status.direction == reverse) {
     return reverse_code;
   } else {
     return 0;
@@ -469,8 +511,8 @@ uint8_t Tank::_determine_motor_control_code(const uint8_t forward_code, const ui
 void Tank::_control_motor(MotorStatus & status, const MotorDirection direction) {
   status.requested_direction = direction;
 
-  if (direction == motor_stop) {
-    status.direction = motor_stop;
+  if (direction == stop) {
+    status.direction = stop;
   // if the desired motor direction is not the current direction, we set the direction_change_requested flag and set the timer
   } else if (status.requested_direction != status.direction && !status.direction_change_requested) {
     status.direction_change_requested = true;
@@ -493,28 +535,39 @@ void Tank::_write_motor_control_code(const unsigned char & control_code) {
 #endif
 }
 
-void Tank::_process_interrupt_flags(unsigned long current_millis) {
+void Tank::_process_interrupt_flags(const uint32_t current_millis) {
   _process_encoder_flags(current_millis);
   _process_bump_flags(current_millis);
   _process_ir_flags();
 }
 
-void Tank::_process_encoder_flags(unsigned long current_millis) {
+void Tank::_process_encoder_flags(const uint32_t current_millis) {
   if (_turret_encoder_interrupt_flag) {
     _turret_encoder_interrupt_flag = false;
 
-    if (_turret_motor_status.last_direction == motor_forward) {
-      _turret_status.encoder_count++;
-    } else if (_turret_motor_status.last_direction == motor_reverse) {
-      _turret_status.encoder_count--;
-    }
-    _check_turret_target();
+    if (_turret_motor_status.last_encoder_millis + MOTOR_ENCODER_DISCARD_MILLIS < current_millis) {
+      _turret_motor_status.last_encoder_millis = current_millis;
+
+      Serial.print(F("turret interrupt "));
+      Serial.println(current_millis);
+
+      if (_turret_motor_status.last_direction == forward) {
+        _turret_status.encoder_count++;
+      } else if (_turret_motor_status.last_direction == reverse) {
+        _turret_status.encoder_count--;
+      }
+      _check_turret_target();
 #ifdef TANK_DEBUG_OUTPUT
-    if (_turret_status.encoder_count % 10 == 0) {
-      Serial.print(F("turret encoder_count: "));
-      Serial.println(_turret_status.encoder_count);
-    }
+      if (_turret_status.encoder_count % 10 == 0) {
+        Serial.print(F("turret encoder_count: "));
+        Serial.println(_turret_status.encoder_count);
+      }
 #endif
+    } else {
+#ifdef TANK_DEBUG_OUTPUT
+      Serial.println(F("discarding turret motor encoder interrupt"));
+#endif
+    }
   }
 
 
@@ -546,32 +599,50 @@ void Tank::_process_encoder_flags(unsigned long current_millis) {
 
   if (_left_wheel_encoder_interrupt_flag) {
 #ifdef TANK_DEBUG_OUTPUT
-    Serial.println(F("left wheel encoder interrupt"));
+    Serial.print(F("left wheel encoder interrupt "));
+    Serial.println(current_millis);
 #endif
     _left_wheel_encoder_interrupt_flag = false;
-    if (_left_motor_status.direction == motor_forward) {
-        _tank_status.wheel_encoder_count_left++;
-    } else if(_left_motor_status.direction == motor_reverse) {
-        _tank_status.wheel_encoder_count_left--;
+
+    if (_left_motor_status.last_encoder_millis + MOTOR_ENCODER_DISCARD_MILLIS < current_millis) {
+      _left_motor_status.last_encoder_millis = current_millis;
+      if (_left_motor_status.direction == forward) {
+          _tank_status.wheel_encoder_count_left++;
+      } else if(_left_motor_status.direction == reverse) {
+          _tank_status.wheel_encoder_count_left--;
+      }
+      _check_drive_targets();
+    } else {
+#ifdef TANK_DEBUG_OUTPUT
+      Serial.print(F("discarding left wheel encoder interrupt"));
+#endif
     }
-    _check_drive_targets();
   }
 
   if (_right_wheel_encoder_interrupt_flag) {
 #ifdef TANK_DEBUG_OUTPUT
-    Serial.println(F("right wheel encoder interrupt"));
+    Serial.print(F("right wheel encoder interrupt "));
+    Serial.println(current_millis);
 #endif
     _right_wheel_encoder_interrupt_flag = false;
-    if (_right_motor_status.direction == motor_forward) {
-        _tank_status.wheel_encoder_count_right++;
-    } else if(_right_motor_status.direction == motor_reverse) {
-        _tank_status.wheel_encoder_count_right--;
+
+    if (_right_motor_status.last_encoder_millis + MOTOR_ENCODER_DISCARD_MILLIS < current_millis) {
+      _right_motor_status.last_encoder_millis = current_millis;
+      if (_right_motor_status.direction == forward) {
+          _tank_status.wheel_encoder_count_right++;
+      } else if(_right_motor_status.direction == reverse) {
+          _tank_status.wheel_encoder_count_right--;
+      }
+      _check_drive_targets();
+    } else {
+#ifdef TANK_DEBUG_OUTPUT
+    Serial.print(F("discarding right wheel encoder interrupt"));
+#endif
     }
-    _check_drive_targets();
   }
 }
 
-void Tank::_process_bump_flags(unsigned long current_millis) {
+void Tank::_process_bump_flags(const uint32_t current_millis) {
   if (_bump_front_interrupt_flag != _bump_status.bump_front) {
     _bump_status.bump_front = _bump_front_interrupt_flag;
 #ifdef TANK_DEBUG_OUTPUT
@@ -614,6 +685,16 @@ void Tank::_process_ir_flags() {
       _pause_unpause();
     }
 
+    if (_ir_status.last_command == IR_CODE_OK) {
+      if (_motor_stall_detection_activated) {
+#ifdef TANK_DEBUG_OUTPUT
+        Serial.println("Clearing motor stall status");
+#endif
+        _motor_stall_detection_activated = false;
+        _reset_leds();
+      }
+    }
+
     if (_ir_status.ir_command_callback) {
       _ir_status.ir_command_callback(_ir_status.last_command);
     }
@@ -629,7 +710,7 @@ void Tank::_drive(const MotorDirection left_direction, const MotorDirection righ
 }
 
 void Tank::_drive_stop() {
-  _drive(motor_stop, motor_stop, 0);
+  _drive(stop, stop, 0);
 }
 
 void Tank::_check_drive_targets() {
@@ -650,14 +731,14 @@ void Tank::_check_drive_distance_target() {
         && (_tank_status.wheel_encoder_count_left / WHEEL_ENCODER_DISTANCE_RATIO <= _tank_status.drive_target_distance && _tank_status.wheel_encoder_count_right / WHEEL_ENCODER_DISTANCE_RATIO <= _tank_status.drive_target_distance))
     ) {
 #ifdef TANK_DEBUG_OUTPUT
-        Serial.println(F("Drive distance target reached"));
+      Serial.println(F("Drive distance target reached"));
 #endif
-        _tank_status.drive_target_distance_reached = true;
-        _drive_stop();
-        if (_drive_target_callback) {
-          _drive_target_callback();
-        }
-        _drive_target_callback = NULL;
+      _tank_status.drive_target_distance_reached = true;
+      _drive_stop();
+      if (_drive_target_callback) {
+        _drive_target_callback();
+      }
+      _drive_target_callback = NULL;
     }
   }
 }
@@ -702,6 +783,16 @@ void Tank::_turret_target_reached() {
     _turret_status.target_callback();
   }
   _turret_status.target_callback = NULL;
+}
+
+void Tank::_motor_stall_detected() {
+#ifdef TANK_DEBUG_OUTPUT
+  Serial.println(F("Stall detected"));
+#endif
+  _motor_stall_detection_activated = true;
+  _tank_led.off(0);
+  _tank_led.off(1);
+  _tank_led.set_blinks(2, (const uint16_t[]){500, 500}, 2);
 }
 
 void Tank::_initialize_battle_status() {
@@ -771,9 +862,19 @@ void Tank::_set_leds_to_hit_count() {
 void Tank::_pause_unpause() {
   if (_paused) {
     _paused = false;
-    _set_leds_to_hit_count();
+    _reset_leds();
   } else {
     _paused = true;
     _tank_led.set_blinks(0, (const uint16_t[]){500, 500}, 2);
+  }
+}
+
+void Tank::_reset_leds() {
+  _tank_led.off(0);
+  _tank_led.off(1);
+  _tank_led.off(2);
+
+  if (_battle_status.active) {
+    _set_leds_to_hit_count();
   }
 }

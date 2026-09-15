@@ -7,6 +7,17 @@
 // after a tank is hit, is is invincible for this long. changing this will change gameplay.
 #define INVINCIBILITY_MILLIS 5000
 
+// if encoder interrupts happen closer than this interval, they will be discarded
+// this is to prevent transient signals from upsetting the count
+// the turret motor, which is by far the most frequent encoder signal,  was recorded 
+// sending an encoder signal every 30-35 milliseconds
+#define MOTOR_ENCODER_DISCARD_MILLIS 20
+
+// i recorded the turret sending an encoder signal every 30-35 millisconds, at medium gearing
+#define TURRET_MOTOR_STALL_DETECTION_MILLIS 500
+// i recorded the drive wheels sending an encoder signal every 200-250 millisconds, at low gearing
+#define DRIVE_MOTOR_STALL_DETECTION_MILLIS 1000 
+
 // there are Serial.print statements scattered throughout the Tank class.
 // you will see them if you have initialized Serial and you are connected to the tank.
 // removing this flag will quiet them.

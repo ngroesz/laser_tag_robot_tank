@@ -27,9 +27,9 @@ struct BattleStatus {
 };
 
 enum MotorDirection {
-  motor_stop,
-  motor_forward,
-  motor_reverse
+  stop,
+  forward,
+  reverse
 };
 
 enum TurretDirection {
@@ -42,7 +42,8 @@ struct MotorStatus {
   MotorDirection requested_direction;
   MotorDirection last_direction;
   bool direction_change_requested;
-  unsigned long direction_change_request_millis;
+  uint32_t direction_change_request_millis;
+  uint32_t last_encoder_millis;
 };
 
 // though we mostly only care whether the bumper switch is activated or not,
@@ -175,6 +176,10 @@ class Tank
     void turret_set_degrees(const uint16_t target_degrees, CallbackFunction target_callback);
     void turret_stop();
     const int16_t turret_get_degrees();
+
+    void motor_stall_detection_enable();
+    void motor_stall_detection_disable();
+
     // TODO: we might end up using this?
     // (but probably not, probably this will be part of a tank-status return value)
     const bool turret_has_been_calibrated();
@@ -187,9 +192,9 @@ class Tank
     MiniLed _tank_led;
 
   private:
-    void _process_interrupt_flags(unsigned long current_millis);
-    void _process_encoder_flags(unsigned long current_millis);
-    void _process_bump_flags(unsigned long current_millis);
+    void _process_interrupt_flags(const uint32_t current_millis);
+    void _process_encoder_flags(const uint32_t current_millis);
+    void _process_bump_flags(const uint32_t current_millis);
     void _process_ir_flags();
 
     void _drive(const MotorDirection left_direction, const MotorDirection right_direction, const uint8_t speed = MOTOR_DEFAULT_SPEED);
@@ -199,11 +204,12 @@ class Tank
     void _check_drive_turn_target();
     void _check_turret_target();
     void _turret_target_reached();
+    void _motor_stall_detected();
 
     void _turret_left();
     void _turret_right();
-    void _update_motors();
-    uint8_t _determine_motor_control_code(const uint8_t forward_code, const uint8_t reverse_code, MotorStatus & status);
+    void _update_motors(uint32_t current_millis);
+    uint8_t _determine_motor_control_code(const uint32_t current_millis, const uint8_t forward_code, const uint8_t reverse_code, MotorStatus & status, uint32_t motor_stall_detection_millis);
     void _control_motor(MotorStatus & status, const MotorDirection direction);
     void _write_motor_control_code(const unsigned char & control_code);
 
@@ -212,6 +218,7 @@ class Tank
     void _pause_unpause();
     void _game_over();
     void _set_leds_to_hit_count();
+    void _reset_leds();
 
     bool _paused;
 
@@ -225,6 +232,8 @@ class Tank
     MotorStatus _left_motor_status;
     MotorStatus _right_motor_status;
     MotorStatus _turret_motor_status;
+    bool _motor_stall_detection_enabled;
+    bool _motor_stall_detection_activated;
 
     struct BumpStatus _bump_status;
     struct IRStatus _ir_status;
