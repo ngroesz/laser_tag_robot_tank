@@ -1,0 +1,4 @@
+tank rotation time: 5.5 - 6 seconds
+
+low-speed turret rotation time: 17 seconds
+medium-speed turret rotation time:  5.6 seconds
