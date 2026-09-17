@@ -16,7 +16,9 @@ boolean blink_state = false;
 boolean ir_command_received = false;
 uint16_t ir_command = 0;
 boolean button_interrupt_flag = false;
-MiniLed mini_led;
+
+uint8_t pins[] = {LED_PIN};
+MiniLed mini_led(pins, 1, LOW);
 
 void button_interrupt() {
   button_interrupt_flag = true;
@@ -27,8 +29,8 @@ void setup()
   Serial.begin(115200);
   Serial.println(F("START " __FILE__ " from " __DATE__ "\r\n"));
 
-  uint8_t pins[] = {LED_PIN};
-  mini_led.setup(pins, HIGH);
+ // uint8_t pins[] = {LED_PIN};
+ // mini_led.setup(pins, 1, LOW);
 
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   attachPinChangeInterrupt(digitalPinToPinChangeInterrupt(BUTTON_PIN), button_interrupt, RISING);
@@ -39,22 +41,31 @@ void setup()
 
   Serial.println(F("Initialized"));
 
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
 
-  mini_led.on(0);
-  delay(500);
-  mini_led.off(0);
+  //Serial.println("on");
+  //mini_led.on(0);
+  //delay(5000);
+  //mini_led.off(0);
+  //Serial.println("off");
 }
 
 void loop()
 {
-  mini_led.loop();
+  //mini_led.loop();
 
   // Check if button is pressed
   if (button_interrupt_flag) {
     Serial.println("Button pressed");
     button_interrupt_flag = false;
-    fire();
-    mini_led.set_blinks(0, (const uint16_t[]){500, 500}, 2, 2);
+    //fire();
+    // blink once
+    Serial.println("on");
+    mini_led.on(0);
+    //pinMode(LED_PIN, OUTPUT);
+    //digitalWrite(LED_PIN, LOW);
+    //mini_led.blink(0, 1);
   }
 
   if (ir_command_received) {
@@ -63,8 +74,12 @@ void loop()
     ir_command_received = false;
 
     if (ir_command == IR_CODE_ASTERISK) {
-      Serial.println("received hit");
-      mini_led.set_blinks(0, (const uint16_t[]){500, 500}, 2, 6);
+      Serial.println("off");
+      mini_led.off(0);
+      //pinMode(LED_PIN, OUTPUT);
+      //digitalWrite(LED_PIN, HIGH);
+      // blink three times
+     // mini_led.blink(0, 3);
     }
   }
 }
