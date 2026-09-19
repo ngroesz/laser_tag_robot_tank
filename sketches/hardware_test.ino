@@ -13,7 +13,7 @@
 #include "src/tank.h"
 
 #define CAMERA_ENABLED
-//#define DISTANCE_SENSOR_ENABLED
+#define DISTANCE_SENSOR_ENABLED
 #define DEBUG_OUTPUT
 
 #define CAMERA_READ_DELAY 100
@@ -80,6 +80,8 @@ void initialize()
 #ifdef DISTANCE_SENSOR_ENABLED
   distance_sensor_init();
 #endif
+
+  tank.motor_stall_detection_disable();
 }
 
 void loop()

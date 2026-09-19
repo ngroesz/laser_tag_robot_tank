@@ -1,9 +1,7 @@
 Drive motor stuff:
-  - consider to verify that wheel encoder changes are all valid - would require recalibrating WHEEL_ENCODER_DISTANCE_RATIO
-  - consider to add motor stall detection
+  - double-check WHEEL_ENCODER_DISTANCE_RATIO
+  - make sure that a motor can spin-up without delay, assuming that it has been off
   - if one drive motor is in wait mode, the other drive motor should probably also wait. the effects of the lag can be most easily demonstrated with the motor_stress_test.
-  - also, make sure that a motor can spin-up without delay, assuming that it has been off
-  - turret movement codes need changed if i go with the low-speed turret gearing
 
 Battle stuff:
   - implement "game" logic like hit count, shot delay, etc.
