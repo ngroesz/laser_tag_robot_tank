@@ -63,11 +63,6 @@ void setup()
   Serial.println(F("Tank initialized."));
 #endif
 
-  initialize();
-}
-
-void initialize()
-{
   tank.set_bump_front_callback(NULL);
   tank.set_bump_rear_callback(NULL);
 
@@ -90,7 +85,6 @@ void loop()
 {
   if (mode_function) {
     if (state_switched) {
-      //initialize();
       state_switched = false;
     }
     mode_function();
