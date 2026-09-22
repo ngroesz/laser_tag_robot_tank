@@ -74,10 +74,12 @@ void initialize()
   tank_led.all_off();
 
 #ifdef CAMERA_ENABLED
+  delay(250);
   camera_init();
 #endif
 
 #ifdef DISTANCE_SENSOR_ENABLED
+  delay(250);
   distance_sensor_init();
 #endif
 
@@ -88,7 +90,7 @@ void loop()
 {
   if (mode_function) {
     if (state_switched) {
-      initialize();
+      //initialize();
       state_switched = false;
     }
     mode_function();
@@ -116,6 +118,7 @@ void distance_sensor_init()
 #ifdef DEBUG_OUTPUT
     Serial.println(F("Failed to detect and initialize sensor!"));
 #endif
+    while (1) {}
   }
   distance_sensor.startContinuous(DISTANCE_READ_DELAY);
 #ifdef DEBUG_OUTPUT
