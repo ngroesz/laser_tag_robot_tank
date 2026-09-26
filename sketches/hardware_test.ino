@@ -56,7 +56,7 @@ void setup()
   // you should not mess with the LEDs in your own combat robot, unless you
   // are doing so as part of debugging feedback that you will eventually remove.
   uint8_t pins[] = {LED_PIN_1, LED_PIN_2, LED_PIN_3};
-  tank_led.setup(pins, LOW);
+  tank_led.setup(pins, 3, LOW);
 
   tank.set_ir_command_callback(process_ir_command);
 #ifdef DEBUG_OUTPUT

@@ -58,7 +58,7 @@ void Tank::initialize()
 
   // initialize LEDs
   uint8_t pins[] = {LED_PIN_1, LED_PIN_2, LED_PIN_3};
-  _tank_led.setup(pins, LOW);
+  _tank_led.setup(pins, 3, LOW);
   _tank_led.on(0);
 
   delay(250);
@@ -140,7 +140,7 @@ void Tank::initialize()
 
 void Tank::setup_routine() {
   _tank_led.all_off();
-  _tank_led.set_blinks(0, (const uint16_t[]){500, 500}, 2);
+  _tank_led.blink(0);
 
 #ifdef TANK_DEBUG_OUTPUT
     Serial.println(F("Waiting for OK to start turret calibration"));
@@ -151,12 +151,14 @@ void Tank::setup_routine() {
   } while(_ir_status.last_command != IR_CODE_OK);
   _ir_status.last_command = 0;
 
-  _tank_led.set_blinks(1, (const uint16_t[]){500, 500}, 2);
+  _tank_led.all_off();
+  _tank_led.blink(1);
 
   // turret_calibrate will not return until turret is calibrated
   turret_calibrate();
 
-  _tank_led.set_blinks(2, (const uint16_t[]){500, 500}, 2);
+  _tank_led.all_off();
+  _tank_led.blink(2);
 
 #ifdef TANK_DEBUG_OUTPUT
     Serial.println(F("Waiting for OK to begin battle"));
@@ -791,8 +793,8 @@ void Tank::_motor_stall_detected() {
 #endif
   _motor_stall_detection_activated = true;
   _tank_led.off(0);
-  _tank_led.off(1);
-  _tank_led.set_blinks(2, (const uint16_t[]){500, 500}, 2);
+  _tank_led.blink(1);
+  _tank_led.blink(2);
 }
 
 void Tank::_initialize_battle_status() {
@@ -829,9 +831,9 @@ void Tank::_game_over() {
 #ifdef SOUND_ENABLED
   tone(SPEAKER_PIN, 220, 2000);
 #endif
-  _tank_led.set_blinks(0, (const uint16_t[]){500, 500}, 2);
-  _tank_led.set_blinks(1, (const uint16_t[]){500, 500}, 2);
-  _tank_led.set_blinks(2, (const uint16_t[]){500, 500}, 2);
+  _tank_led.blink(0);
+  _tank_led.blink(1);
+  _tank_led.blink(2);
 }
 
 void Tank::_set_leds_to_hit_count() {
@@ -865,7 +867,7 @@ void Tank::_pause_unpause() {
     _reset_leds();
   } else {
     _paused = true;
-    _tank_led.set_blinks(0, (const uint16_t[]){500, 500}, 2);
+    _tank_led.blink(0);
   }
 }
 
