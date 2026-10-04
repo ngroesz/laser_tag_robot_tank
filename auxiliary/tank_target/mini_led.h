@@ -23,8 +23,7 @@ struct Led {
 class MiniLed
 {
   public:
-    // TODO: consider to move setup to a constructor
-    MiniLed(const uint8_t led_pins[], const uint8_t led_count, const boolean on_state = HIGH);
+    void setup(const uint8_t led_pins[], const uint8_t led_count, const boolean on_state = HIGH);
     void loop();
     void on(const uint8_t led_index);
     void off(const uint8_t led_index);
@@ -32,8 +31,6 @@ class MiniLed
     void toggle(uint8_t led_index);
     void all_on();
     void all_off();
-    //void set_blinks(uint8_t led_index, const uint16_t blinks[], const uint8_t blinks_size);
-    //void set_blinks(uint8_t led_index, const uint16_t blinks[], const uint8_t blinks_size, const uint8_t max_blinks);
 
   private:
     void _initialize_led(struct Led & _led, const uint8_t led_pin);
@@ -50,7 +47,7 @@ class MiniLed
     // TODO: can this be made dynamic
     Led _leds[MAX_LED_COUNT];
 
-    uint8_t _led_count;  
+    uint8_t _led_count;
     unsigned long _current_millis;
 };
 

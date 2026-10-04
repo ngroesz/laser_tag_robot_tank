@@ -1,6 +1,12 @@
 #include <PinChangeInterrupt.h>
 
-#include "constants.h"
+#define BUTTON_PIN 2
+#define IR_RX_PIN 3
+#define IR_TX_PIN 15
+#define LED_PIN 6
+#define IR_CODE_ASTERISK 22
+#define FIRE_IGNORE_MILLIS 1
+
 #include "mini_led.h"
 
 #define IR_RECEIVE_PIN IR_RX_PIN
@@ -9,16 +15,15 @@
 #include "TinyIRReceiver.hpp"
 #include "TinyIRSender.hpp"
 
-int blink_interval = 2000;
-uint32_t last_blink = 0;
-boolean blink_state = false;
+#define DEBUG_OUTPUT
 
 boolean ir_command_received = false;
 uint16_t ir_command = 0;
 boolean button_interrupt_flag = false;
 
-uint8_t pins[] = {LED_PIN};
-MiniLed mini_led(pins, 1, LOW);
+uint32_t last_fire_millis = 0;
+
+MiniLed mini_led;
 
 void button_interrupt() {
   button_interrupt_flag = true;
@@ -29,8 +34,8 @@ void setup()
   Serial.begin(115200);
   Serial.println(F("START " __FILE__ " from " __DATE__ "\r\n"));
 
- // uint8_t pins[] = {LED_PIN};
- // mini_led.setup(pins, 1, LOW);
+  uint8_t pins[] = {LED_PIN};
+  mini_led.setup(pins, 1, LOW);
 
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   attachPinChangeInterrupt(digitalPinToPinChangeInterrupt(BUTTON_PIN), button_interrupt, RISING);
@@ -41,45 +46,38 @@ void setup()
 
   Serial.println(F("Initialized"));
 
-  pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, LOW);
-
-  //Serial.println("on");
-  //mini_led.on(0);
-  //delay(5000);
-  //mini_led.off(0);
-  //Serial.println("off");
+  mini_led.blink(0, 2);
 }
 
 void loop()
 {
-  //mini_led.loop();
+  mini_led.loop();
 
   // Check if button is pressed
   if (button_interrupt_flag) {
+#ifdef DEBUG_OUTPUT
     Serial.println("Button pressed");
+#endif
     button_interrupt_flag = false;
-    //fire();
-    // blink once
-    Serial.println("on");
-    mini_led.on(0);
-    //pinMode(LED_PIN, OUTPUT);
-    //digitalWrite(LED_PIN, LOW);
-    //mini_led.blink(0, 1);
+    fire();
+
+    mini_led.blink(0, 1);
   }
 
   if (ir_command_received) {
+#ifdef DEBUG_OUTPUT
     Serial.print("Received IR: ");
     Serial.println(ir_command);
+#endif
     ir_command_received = false;
 
-    if (ir_command == IR_CODE_ASTERISK) {
-      Serial.println("off");
-      mini_led.off(0);
-      //pinMode(LED_PIN, OUTPUT);
-      //digitalWrite(LED_PIN, HIGH);
-      // blink three times
-     // mini_led.blink(0, 3);
+    // without a delay, reflected light can register as a self-hit
+    // a delay of as little as a millisecond turns out to be enought to avoid this
+    if (ir_command == IR_CODE_ASTERISK && millis() > last_fire_millis + 1) {
+#ifdef DEBUG_OUTPUT
+      Serial.println("Received hit ");
+#endif
+      mini_led.blink(0, 3);
     }
   }
 }
@@ -87,6 +85,7 @@ void loop()
 void fire()
 {
   sendNEC(IR_TX_PIN, 0x0, IR_CODE_ASTERISK, 0);
+  last_fire_millis = millis();
 }
 
 void handleReceivedTinyIRData() {
