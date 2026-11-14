@@ -6,11 +6,7 @@
 #define BLINK_MILLIS 500
 #define MAX_LED_COUNT 3
 
-enum LedState {
-  led_on,
-  led_off,
-  led_blinking
-};
+enum LedState { led_on, led_off, led_blinking };
 
 struct Led {
   uint8_t led_pin;
@@ -20,35 +16,35 @@ struct Led {
   uint32_t last_change_millis;
 };
 
-class MiniLed
-{
-  public:
-    void setup(const uint8_t led_pins[], const uint8_t led_count, const boolean on_state = HIGH);
-    void loop();
-    void on(const uint8_t led_index);
-    void off(const uint8_t led_index);
-    void blink(const uint8_t led_index, const uint8_t blink_count = 0);
-    void toggle(uint8_t led_index);
-    void all_on();
-    void all_off();
+class MiniLed {
+ public:
+  void setup(const uint8_t led_pins[], const uint8_t led_count,
+             const boolean on_state = HIGH);
+  void loop();
+  void on(const uint8_t led_index);
+  void off(const uint8_t led_index);
+  void blink(const uint8_t led_index, const uint8_t blink_count = 0);
+  void toggle(uint8_t led_index);
+  void all_on();
+  void all_off();
 
-  private:
-    void _initialize_led(struct Led & _led, const uint8_t led_pin);
-    void _reset_led(struct Led & _led);
-    void _update_led(struct Led & _led);
-    //void _led_on(struct Led & _led);
-    //void _led_off(struct Led & _led);
+ private:
+  void _initialize_led(struct Led& _led, const uint8_t led_pin);
+  void _reset_led(struct Led& _led);
+  void _update_led(struct Led& _led);
+  // void _led_on(struct Led & _led);
+  // void _led_off(struct Led & _led);
 
-    void _print_led_state(struct Led & _led);
+  void _print_led_state(struct Led& _led);
 
-    boolean _on_state;
-    boolean _off_state;
+  boolean _on_state;
+  boolean _off_state;
 
-    // TODO: can this be made dynamic
-    Led _leds[MAX_LED_COUNT];
+  // TODO: can this be made dynamic
+  Led _leds[MAX_LED_COUNT];
 
-    uint8_t _led_count;
-    unsigned long _current_millis;
+  uint8_t _led_count;
+  unsigned long _current_millis;
 };
 
 #endif

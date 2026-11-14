@@ -4,37 +4,44 @@
 // pause time between shots. changing this will change gameplay.
 #define RELOAD_MILLIS 1000
 
-// after a tank is hit, is is invincible for this long. changing this will change gameplay.
+// after a tank is hit, is is invincible for this long. changing this will
+// change gameplay.
 #define INVINCIBILITY_MILLIS 5000
 
-// if encoder interrupts happen closer than this interval, they will be discarded
-// this is to prevent transient signals from upsetting the count
-// the turret motor, which is by far the most frequent encoder signal,  was recorded 
+// if encoder interrupts happen closer than this interval, they will be
+// discarded this is to prevent transient signals from upsetting the count the
+// turret motor, which is by far the most frequent encoder signal,  was recorded
 // sending an encoder signal every 30-35 milliseconds
 #define MOTOR_ENCODER_DISCARD_MILLIS 20
 
-// i recorded the turret sending an encoder signal every 30-35 millisconds, at medium gearing
+// i recorded the turret sending an encoder signal every 30-35 millisconds, at
+// medium gearing
 #define TURRET_MOTOR_STALL_DETECTION_MILLIS 500
-// i recorded the drive wheels sending an encoder signal every 200-250 millisconds, at low gearing
-#define DRIVE_MOTOR_STALL_DETECTION_MILLIS 1000 
+// i recorded the drive wheels sending an encoder signal every 200-250
+// millisconds, at low gearing
+#define DRIVE_MOTOR_STALL_DETECTION_MILLIS 1000
 
 // there are Serial.print statements scattered throughout the Tank class.
-// you will see them if you have initialized Serial and you are connected to the tank.
-// removing this flag will quiet them.
+// you will see them if you have initialized Serial and you are connected to the
+// tank. removing this flag will quiet them.
 #define TANK_DEBUG_OUTPUT
 
-// the piezo speaker is annoying, if you do not want to hear it during development then comment-out this flag
+// the piezo speaker is annoying, if you do not want to hear it during
+// development then comment-out this flag
 #define SOUND_ENABLED
 
-// you may wish to do programming/debugging without the motors enabled, if so comment-out this flag
-// if you are programming with just a 5V USB connecting cable and no batteries connected to the motor power
-// supply, then you should definitely comment-out this flag
+// you may wish to do programming/debugging without the motors enabled, if so
+// comment-out this flag if you are programming with just a 5V USB connecting
+// cable and no batteries connected to the motor power supply, then you should
+// definitely comment-out this flag
 #define MOTORS_ENABLED
 
-// if you want to control the LEDs yourself, and do not want the Tank class to mess with them, you can remove this flag
+// if you want to control the LEDs yourself, and do not want the Tank class to
+// mess with them, you can remove this flag
 #define LEDS_ENABLED
 
-// these should not need to be changed. changing the polarity of the motor wiring would require this to be changed
+// these should not need to be changed. changing the polarity of the motor
+// wiring would require this to be changed
 #define CONTROL_CODE_RIGHT_MOTOR_FORWARD 8
 #define CONTROL_CODE_RIGHT_MOTOR_REVERSE 4
 #define CONTROL_CODE_LEFT_MOTOR_FORWARD 2
@@ -42,9 +49,10 @@
 #define CONTROL_CODE_TURRET_MOTOR_FORWARD 16
 #define CONTROL_CODE_TURRET_MOTOR_REVERSE 32
 
-// delay between motor changing directions. to reduce strain on motors. i'm uncertain what the best
-// delay is. it should certainly be more than 0. i'm fairly certain it can be less than 1000 (1 second)
-// the idea is that a motor should stop spinning before applying opposite polarity.
+// delay between motor changing directions. to reduce strain on motors. i'm
+// uncertain what the best delay is. it should certainly be more than 0. i'm
+// fairly certain it can be less than 1000 (1 second) the idea is that a motor
+// should stop spinning before applying opposite polarity.
 #define MOTOR_CHANGE_DIRECTION_DELAY_MILLIS 500
 
 // if no speed is specified
@@ -52,8 +60,8 @@
 
 // the ratio of turret drive encoder counts and one degree of angle.
 // it is empirically-derived and not precise.
-// the larger this number is, the farther the turret will travel to achieve one degree
-// of angle change.
+// the larger this number is, the farther the turret will travel to achieve one
+// degree of angle change.
 #define TURRET_GEAR_RATIO 1.36
 
 // the ratio between a wheel encoder sensor trigger and distance in cms
@@ -64,11 +72,11 @@
 // resolution
 #define WHEEL_ENCODER_DISTANCE_RATIO .75
 
-// this number determines the relationship between wheel encoder count and degrees turned
-// for example, when calculating right turn for N degrees the formula is:
-// wheel_encoder_count_left + -(wheel_encoder_count_right) * WHEEL_ENCODER_TURN_RATIO
-// thus, when this number is larger, the number of degrees turned will be greater, for a
-// given encoder count
+// this number determines the relationship between wheel encoder count and
+// degrees turned for example, when calculating right turn for N degrees the
+// formula is: wheel_encoder_count_left + -(wheel_encoder_count_right) *
+// WHEEL_ENCODER_TURN_RATIO thus, when this number is larger, the number of
+// degrees turned will be greater, for a given encoder count
 #define WHEEL_ENCODER_TURN_RATIO .122
 
 #endif

@@ -8,6 +8,9 @@ compile:
 clean:
 	/usr/local/bin/arduino-cli compile --clean --library $(PWD)/src -b $(BOARD) $(PATH)
 
+format:
+	/usr/bin/find . -type f \( -iname "*.h" -o -iname "*.cpp" -o -iname "*.ino" \) -print0 | /usr/bin/xargs -0 /usr/bin/clang-format -i
+
 upload: compile
 	/usr/local/bin/arduino-cli upload -b $(BOARD) -p $(PORT) $(PATH)
 

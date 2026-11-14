@@ -1,7 +1,6 @@
 // TODO: add bumper test
-// also, I want a target test (or, tank will always have to be acting as a target)
-// If I add more than one mode, I will have to consolidate modes?
-
+// also, I want a target test (or, tank will always have to be acting as a
+// target) If I add more than one mode, I will have to consolidate modes?
 
 #include <PVision.h>
 #include <VL53L0X.h>
@@ -9,8 +8,8 @@
 
 #include "src/ir_codes.h"
 #include "src/pins.h"
-#include "src/tank_constants.h"
 #include "src/tank.h"
+#include "src/tank_constants.h"
 
 #define CAMERA_ENABLED
 #define DISTANCE_SENSOR_ENABLED
@@ -29,7 +28,7 @@ byte camera_result;
 bool target_active;
 uint16_t target_x;
 
-typedef void (*ModeFunction) ();
+typedef void (*ModeFunction)();
 ModeFunction mode_function = NULL;
 
 int last_ir_command;
@@ -38,9 +37,8 @@ bool state_switched = false;
 unsigned long last_distance_read_millis = 0;
 unsigned long last_camera_read_millis = 0;
 
-void setup()
-{
-  Wire.begin(); // this is necessary to communicate with I2C devices
+void setup() {
+  Wire.begin();  // this is necessary to communicate with I2C devices
 
 #ifdef DEBUG_OUTPUT
   Serial.begin(115200);
@@ -81,8 +79,7 @@ void setup()
   tank.motor_stall_detection_disable();
 }
 
-void loop()
-{
+void loop() {
   if (mode_function) {
     if (state_switched) {
       state_switched = false;
@@ -93,8 +90,7 @@ void loop()
   tank_led.loop();
 }
 
-void camera_init()
-{
+void camera_init() {
   Serial.println(F("Initializing camera ..."));
   ircam.init();
 #ifdef DEBUG_OUTPUT
@@ -104,15 +100,15 @@ void camera_init()
   target_active = false;
 }
 
-void distance_sensor_init()
-{
+void distance_sensor_init() {
   Serial.println(F("Initializing distance sensor ..."));
   distance_sensor.setTimeout(500);
   if (!distance_sensor.init()) {
 #ifdef DEBUG_OUTPUT
     Serial.println(F("Failed to detect and initialize sensor!"));
 #endif
-    while (1) {}
+    while (1) {
+    }
   }
   distance_sensor.startContinuous(DISTANCE_READ_DELAY);
 #ifdef DEBUG_OUTPUT
@@ -120,8 +116,7 @@ void distance_sensor_init()
 #endif
 }
 
-void drive_test()
-{
+void drive_test() {
   switch (last_ir_command) {
     case IR_CODE_UP:
       Serial.println(F("drive forward"));
@@ -151,13 +146,9 @@ void drive_test()
   }
 }
 
-void drive_stop()
-{
-  tank.drive_stop();
-}
+void drive_stop() { tank.drive_stop(); }
 
-void drive_measured_test()
-{
+void drive_measured_test() {
   switch (last_ir_command) {
     case IR_CODE_UP:
       Serial.println(F("drive forward 10 cm"));
@@ -187,8 +178,7 @@ void drive_measured_test()
   }
 }
 
-void turret_test()
-{
+void turret_test() {
   switch (last_ir_command) {
     case IR_CODE_LEFT:
       tank.turret_left();
@@ -205,8 +195,7 @@ void turret_test()
   }
 }
 
-void turret_measured_test()
-{
+void turret_measured_test() {
   switch (last_ir_command) {
     case IR_CODE_LEFT:
       tank.turret_left_degrees(90);
@@ -223,13 +212,9 @@ void turret_measured_test()
   }
 }
 
-void setup_routine_test()
-{
-  tank.setup_routine();
-}
+void setup_routine_test() { tank.setup_routine(); }
 
-void led_test()
-{
+void led_test() {
   switch (last_ir_command) {
     case IR_CODE_UP:
       Serial.println("led test: all on");
@@ -263,8 +248,7 @@ void led_test()
   }
 }
 
-void distance_sensor_test()
-{
+void distance_sensor_test() {
   if (millis() > last_distance_read_millis + DISTANCE_READ_DELAY) {
     last_distance_read_millis = millis();
     uint16_t distance = distance_sensor.readRangeContinuousMillimeters();
@@ -289,8 +273,7 @@ void distance_sensor_test()
   }
 }
 
-void camera_test()
-{
+void camera_test() {
   if (millis() > last_camera_read_millis + CAMERA_READ_DELAY) {
     last_camera_read_millis = millis();
     camera_result = ircam.read();
@@ -328,8 +311,7 @@ void camera_test()
   }
 }
 
-void speaker_test()
-{
+void speaker_test() {
   if (last_ir_command == IR_CODE_OK) {
 #ifdef SOUND_ENABLED
     tone(SPEAKER_PIN, 33, 500);
@@ -338,14 +320,12 @@ void speaker_test()
   }
 }
 
-void bump_test()
-{
+void bump_test() {
   tank.set_bump_front_callback(bump_test_front_callback);
   tank.set_bump_rear_callback(bump_test_rear_callback);
 }
 
-void bump_test_front_callback(bool state)
-{
+void bump_test_front_callback(bool state) {
   if (state) {
     tank_led.on(0);
   } else {
@@ -353,8 +333,7 @@ void bump_test_front_callback(bool state)
   }
 }
 
-void bump_test_rear_callback(bool state)
-{
+void bump_test_rear_callback(bool state) {
   if (state) {
     tank_led.on(1);
   } else {
@@ -362,8 +341,7 @@ void bump_test_rear_callback(bool state)
   }
 }
 
-void process_ir_command(int ir_command)
-{
+void process_ir_command(int ir_command) {
 #ifdef DEBUG_OUTPUT
   Serial.print(F("Received IR command: "));
   Serial.println(ir_command);
@@ -434,7 +412,7 @@ void process_ir_command(int ir_command)
       last_ir_command = 0;
       break;
 
-   case IR_CODE_EIGHT:
+    case IR_CODE_EIGHT:
 #ifdef DEBUG_OUTPUT
       Serial.println(F("LED Test"));
 #endif
@@ -461,7 +439,8 @@ void process_ir_command(int ir_command)
       last_ir_command = 0;
       break;
 
-    // if ir_command is not a state-switching command, then remember the ir_command
+    // if ir_command is not a state-switching command, then remember the
+    // ir_command
     default:
       last_ir_command = ir_command;
   }

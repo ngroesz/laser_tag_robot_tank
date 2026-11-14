@@ -11,7 +11,8 @@
 
 #define IR_RECEIVE_PIN IR_RX_PIN
 #define USE_CALLBACK_FOR_TINY_RECEIVER
-// IMPORTANT: The above IR pre-processor directives must be defined before including TinyIRReceiver.hpp
+// IMPORTANT: The above IR pre-processor directives must be defined before
+// including TinyIRReceiver.hpp
 #include "TinyIRReceiver.hpp"
 #include "TinyIRSender.hpp"
 
@@ -25,12 +26,9 @@ uint32_t last_fire_millis = 0;
 
 MiniLed mini_led;
 
-void button_interrupt() {
-  button_interrupt_flag = true;
-}
+void button_interrupt() { button_interrupt_flag = true; }
 
-void setup()
-{
+void setup() {
   Serial.begin(115200);
   Serial.println(F("START " __FILE__ " from " __DATE__ "\r\n"));
 
@@ -38,7 +36,8 @@ void setup()
   mini_led.setup(pins, 1, LOW);
 
   pinMode(BUTTON_PIN, INPUT_PULLUP);
-  attachPinChangeInterrupt(digitalPinToPinChangeInterrupt(BUTTON_PIN), button_interrupt, RISING);
+  attachPinChangeInterrupt(digitalPinToPinChangeInterrupt(BUTTON_PIN),
+                           button_interrupt, RISING);
 
   if (!initPCIInterruptForTinyReceiver()) {
     Serial.println(F("could not initialize IR"));
@@ -49,8 +48,7 @@ void setup()
   mini_led.blink(0, 2);
 }
 
-void loop()
-{
+void loop() {
   mini_led.loop();
 
   // Check if button is pressed
@@ -72,7 +70,8 @@ void loop()
     ir_command_received = false;
 
     // without a delay, reflected light can register as a self-hit
-    // a delay of as little as a millisecond turns out to be enought to avoid this
+    // a delay of as little as a millisecond turns out to be enought to avoid
+    // this
     if (ir_command == IR_CODE_ASTERISK && millis() > last_fire_millis + 1) {
 #ifdef DEBUG_OUTPUT
       Serial.println("Received hit ");
@@ -82,14 +81,14 @@ void loop()
   }
 }
 
-void fire()
-{
+void fire() {
   sendNEC(IR_TX_PIN, 0x0, IR_CODE_ASTERISK, 0);
   last_fire_millis = millis();
 }
 
 void handleReceivedTinyIRData() {
-  if (TinyIRReceiverData.Flags != IRDATA_FLAGS_IS_REPEAT && TinyIRReceiverData.Flags != IRDATA_FLAGS_PARITY_FAILED) {
+  if (TinyIRReceiverData.Flags != IRDATA_FLAGS_IS_REPEAT &&
+      TinyIRReceiverData.Flags != IRDATA_FLAGS_PARITY_FAILED) {
     ir_command_received = true;
     ir_command = TinyIRReceiverData.Command;
   }
