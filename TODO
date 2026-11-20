@@ -8,10 +8,7 @@ Battle stuff:
 
 Internal cleanup:
   - maybe make degrees be from 1-360, that way target sentinels could match
-  - look at clang-format for comment formatting
-  - consider to simplify mini_led library: each led is either on, off, or blinking
 
 Bugs:
   - rear bump seems to trigger right wheel encoder. i do not know why this. it's maybe not a huge problem but feels wrong.
     UPDATE: I think blue tank has some problem with right wheel encoder. red tank seems to work fine
-  - for example doing distance test, the leds seem to blink instead of always on
