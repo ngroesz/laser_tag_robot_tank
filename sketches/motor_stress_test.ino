@@ -31,7 +31,7 @@
 
 Tank tank;
 
-enum State { wait, drive };
+enum State { wait, motor_stress_test, drive_measured_begin, drive_measured_in_progress };
 
 State current_state;
 
@@ -52,61 +52,89 @@ void setup() {
 
   current_state = wait;
   tank.set_bump_front_callback(bump_front);
+  tank.set_bump_rear_callback(bump_rear);
 
+  tank.motor_stall_detection_disable();
   randomSeed(analogRead(0));
 }
 
-void bump_front() {
-  if (current_state == wait) {
-    Serial.println("driving");
-    current_state = drive;
-  } else {
-    Serial.println("waiting");
-    current_state = wait;
+void bump_front(boolean bump_status) {
+  if (bump_status) {
+    if (current_state == wait) {
+      Serial.println("driving");
+      current_state = motor_stress_test;
+    } else {
+      Serial.println("waiting");
+      current_state = wait;
+    }
   }
+}
+
+void bump_rear(boolean bump_status) {
+  if (bump_status) {
+    if (current_state == wait) {
+      Serial.println("driving measured");
+      current_state = drive_measured_begin;
+    } else {
+      Serial.println("waiting");
+      current_state = wait;
+    }
+  }
+}
+
+void drive_target_reached() {
+  Serial.println("drive target reached");
+  current_state = wait;
 }
 
 void loop() {
   if (current_state == wait) {
     tank.drive_stop();
     tank.turret_stop();
-  } else {
-    if (millis() > last_drive_change_millis + DRIVE_CHANGE_DELAY) {
-      Serial.println("change drive direction");
-      last_drive_change_millis = millis();
-      int drive_change = random(0, 4);
-
-      switch (drive_change) {
-        case 0:
-          Serial.println("drive forward");
-          tank.drive_forward();
-          break;
-        case 1:
-          Serial.println("drive reverse");
-          tank.drive_reverse();
-          break;
-        case 2:
-          Serial.println("drive left");
-          tank.drive_turn_left();
-          break;
-        case 3:
-          Serial.println("drive right");
-          tank.drive_turn_right();
-          break;
-      }
-
-      switch (random(0, 2)) {
-        case 0:
-          Serial.println("turret left");
-          tank.turret_left();
-          break;
-        case 1:
-          Serial.println("turret right");
-          tank.turret_right();
-          break;
-      }
-    }
+  } else if (current_state == motor_stress_test) {
+    motor_stress();
+  } else if (current_state == drive_measured_begin) {
+    tank.drive_forward_target(10, drive_target_reached);
+    current_state = drive_measured_in_progress;
   }
 
   tank.loop();
+}
+
+void motor_stress() {
+  if (millis() > last_drive_change_millis + DRIVE_CHANGE_DELAY) {
+    Serial.println("change drive direction");
+    last_drive_change_millis = millis();
+    int drive_change = random(0, 4);
+
+    switch (drive_change) {
+      case 0:
+        Serial.println("drive forward");
+        tank.drive_forward();
+        break;
+      case 1:
+        Serial.println("drive reverse");
+        tank.drive_reverse();
+        break;
+      case 2:
+        Serial.println("drive left");
+        tank.drive_turn_left();
+        break;
+      case 3:
+        Serial.println("drive right");
+        tank.drive_turn_right();
+        break;
+    }
+
+    switch (random(0, 2)) {
+      case 0:
+        Serial.println("turret left");
+        tank.turret_left();
+        break;
+      case 1:
+        Serial.println("turret right");
+        tank.turret_right();
+        break;
+    }
+  }
 }

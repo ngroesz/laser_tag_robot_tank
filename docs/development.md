@@ -95,6 +95,13 @@ If you are going to be programming using just the FTDI connection and no battery
 power, you can temporarily comment-out MOTORS_ENABLED such that the motors will
 not attempt to turn.
 
+### Power Cycling
+
+To power cycle the main board, you can turn the switch at the battery pack off and
+back on. If a FTDI connector is plugged in at the same time, you will have to unplug
+that cable at the same time that the battery pack is off in order to achieve a 
+power off state.
+
 ### Coding A Real-Time System
 
 If you have never worked with embedded systems or robots you may find the coding
