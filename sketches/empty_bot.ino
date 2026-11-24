@@ -72,15 +72,15 @@ void setup() {
 #ifdef DEBUG_OUTPUT
   Serial.println("Distance sensor initialized.");
 #endif
-}
 
-// put your custom setup logic here
+  // put your custom setup logic here
 
-// this will do the setup routine which waits for OK, calibrates the turret, and
-// then waits for OK again this is how a game-playing robot should start but it
-// could be annoying for standard development so feel free to comment it out
-// until you create your competition robot
-tank.setup_routine();
+  // TODO: I think I will change how this works
+  // this will do the setup routine which waits for OK, calibrates the turret, and
+  // then waits for OK again this is how a game-playing robot should start but it
+  // could be annoying for standard development so feel free to comment it out
+  // until you create your competition robot
+  tank.setup_routine();
 }
 
 void loop() {
@@ -90,7 +90,7 @@ void loop() {
   // check to see if the camera has spotted a target
   if (millis() > last_camera_update_millis + camera_read_delay) {
     if (find_target(my_target)) {
-      Serial.println("target spotted");
+      Serial.println(F("Target spotted"));
     }
 
     last_camera_update_millis = millis();
@@ -111,11 +111,20 @@ bool find_target(struct target& t) {
   return false;
 }
 
-void bump_front() {
+void bump_front(boolean bump_status) {
   // the front bumper has been pressed, think about doing some obstacle
   // avoidance
+#ifdef DEBUG_OUTPUT
+  Serial.print(F("Bump front: "));
+  Serial.println(bump_status);
+#endif
 }
 
 void bump_rear() {
   // the rear bumper has been pressed, think about doing some obstacle avoidance
+#endif
+#ifdef DEBUG_OUTPUT
+  Serial.print(F("Bump rear: "));
+  Serial.println(bump_status);
+#endif
 }

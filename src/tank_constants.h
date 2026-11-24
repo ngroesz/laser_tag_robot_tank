@@ -10,9 +10,9 @@
 
 // if encoder interrupts happen closer than this interval, they will be
 // discarded this is to prevent transient signals from upsetting the count the
-// turret motor, which is by far the most frequent encoder signal,  was recorded
+// turret motor, which is by far the most frequent encoder signal, was recorded
 // sending an encoder signal every 30-35 milliseconds
-#define MOTOR_ENCODER_DISCARD_MILLIS 20
+#define MOTOR_ENCODER_DISCARD_MILLIS 40
 
 // i recorded the turret sending an encoder signal every 30-35 millisconds, at
 // medium gearing

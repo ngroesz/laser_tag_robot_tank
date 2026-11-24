@@ -106,15 +106,17 @@ void Tank::initialize() {
   attachPinChangeInterrupt(
       digitalPinToPinChangeInterrupt(WHEEL_ENCODER_PIN_LEFT),
       _left_wheel_encoder_interrupt, CHANGE);
+
   pinMode(WHEEL_ENCODER_PIN_RIGHT, INPUT_PULLUP);
   attachPinChangeInterrupt(
       digitalPinToPinChangeInterrupt(WHEEL_ENCODER_PIN_RIGHT),
       _right_wheel_encoder_interrupt, CHANGE);
 
-  // initialize turret encoder
+  // initialize turret encoder and turret calibration
   pinMode(TURRET_ENCODER_PIN, INPUT_PULLUP);
   attachPCINT(digitalPinToPCINT(TURRET_ENCODER_PIN), _turret_encoder_interrupt,
               CHANGE);
+
   pinMode(TURRET_CALIBRATION_PIN, INPUT_PULLUP);
   attachPCINT(digitalPinToPCINT(TURRET_CALIBRATION_PIN),
               _turret_calibration_interrupt, FALLING);
@@ -130,51 +132,62 @@ void Tank::initialize() {
 #endif
   }
 
-  _tank_led.on(2);
-
-#ifdef TANK_DEBUG_OUTPUT
-  Serial.println(F("... tank initialized."));
-#endif
-}
-
-void Tank::setup_routine() {
-  _tank_led.all_off();
-  _tank_led.blink(0);
-
-#ifdef TANK_DEBUG_OUTPUT
-  Serial.println(F("Waiting for OK to start turret calibration"));
-#endif
-
-  do {
-    loop();
-  } while (_ir_status.last_command != IR_CODE_OK);
-  _ir_status.last_command = 0;
-
-  _tank_led.all_off();
-  _tank_led.blink(1);
-
-  // turret_calibrate will not return until turret is calibrated
-  turret_calibrate();
-
-  _tank_led.all_off();
+  // third LED blinks on startup as an indication that turret calibration has not been performed
+  _tank_led.off(0);
+  _tank_led.off(1);
   _tank_led.blink(2);
 
 #ifdef TANK_DEBUG_OUTPUT
-  Serial.println(F("Waiting for OK to begin battle"));
+  Serial.println(F("Initialization complete. Waiting for confirmation to begin battle."));
 #endif
 
-  do {
+  while(!_battle_status.active) {
     loop();
-  } while (_ir_status.last_command != IR_CODE_OK);
-  _ir_status.last_command = 0;
+  }
 
 #ifdef TANK_DEBUG_OUTPUT
-  Serial.println(F("Now I am battlin'"));
+  Serial.println(F("Exiting tank initialization."));
 #endif
-
-  _initialize_battle_status();
-  _set_leds_to_hit_count();
 }
+
+//void Tank::turret_calibration() {
+//  _tank_led.all_off();
+//  _tank_led.blink(0);
+//
+//#ifdef TANK_DEBUG_OUTPUT
+//  Serial.println(F("Waiting for OK to start turret calibration"));
+//#endif
+//
+//  do {
+//    loop();
+//  } while (_ir_status.last_command != IR_CODE_OK);
+//  _ir_status.last_command = 0;
+//
+//  _tank_led.all_off();
+//  _tank_led.blink(1);
+//
+//  // turret_calibrate will not return until turret is calibrated
+//  turret_calibrate();
+//
+//  _tank_led.all_off();
+//  _tank_led.blink(2);
+//
+//#ifdef TANK_DEBUG_OUTPUT
+//  Serial.println(F("Waiting for OK to begin battle"));
+//#endif
+//
+//  do {
+//    loop();
+//  } while (_ir_status.last_command != IR_CODE_OK);
+//  _ir_status.last_command = 0;
+//
+//#ifdef TANK_DEBUG_OUTPUT
+//  Serial.println(F("Now I am battlin'"));
+//#endif
+//
+//  _initialize_battle_status();
+//  _set_leds_to_hit_count();
+//}
 
 void Tank::loop() {
   uint32_t current_millis = millis();
@@ -321,6 +334,10 @@ void Tank::turret_calibrate() {
 #ifdef TANK_DEBUG_OUTPUT
   Serial.println(F("turret has been calibrated"));
 #endif
+
+  if (!_battle_status.active) {
+    _tank_led.off(2);
+  }
 }
 
 void Tank::turret_left() {
@@ -725,13 +742,14 @@ void Tank::_process_ir_flags() {
 
     if (_ir_status.last_command == IR_CODE_ASTERISK) {
       _maybe_register_hit();
-    }
-
-    if (_ir_status.last_command == IR_CODE_POUND) {
+    } else if (_ir_status.last_command == IR_CODE_POUND) {
       _pause_unpause();
-    }
-
-    if (_ir_status.last_command == IR_CODE_OK) {
+    } else if (_ir_status.last_command == IR_CODE_ONE) {
+      turret_calibrate();
+    } else if (_ir_status.last_command == IR_CODE_OK) {
+      if (!_battle_status.active) {
+        _initialize_battle_status();
+      }
       if (_motor_stall_detection_activated) {
 #ifdef TANK_DEBUG_OUTPUT
         Serial.println("Clearing motor stall status");
@@ -857,6 +875,9 @@ void Tank::_motor_stall_detected() {
 }
 
 void Tank::_initialize_battle_status() {
+#ifdef TANK_DEBUG_OUTPUT
+  Serial.println(F("Initializing battle status"));
+#endif
   _battle_status.active = true;
   _battle_status.hit_count = 0;
   _battle_status.last_hit_millis = 0;

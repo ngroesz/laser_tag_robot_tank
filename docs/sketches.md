@@ -11,11 +11,11 @@ You will need an IR remote in order to use this sketch. This sketch is meant to 
 various capabilities of the robot and to ensure that all functions are in working order. You can
 follow the guide below in order to command the robot to do various things.
 
-TODO: add guide
+[Hardware Test](hardware_test.md)
 
 ## empty_bot.ino
 
-A very dumb bot in that it has no intelligence whatsover. It merely initalizes the tank and
+A very dumb bot in that it does nothing whatsoever. It merely initalizes the tank and
 registers callback functions. A good starting template if you want to write your own bot.
 
 ## wander_bot.ino

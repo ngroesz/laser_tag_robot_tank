@@ -111,7 +111,7 @@ class Tank {
    * It isn't necessary to use this during development. If you just need the
    * turret to be calibrated, you can call turret_calibrate(), instead
    */
-  void setup_routine();
+  //void setup_routine();
 
   /** @brief Updates the tank. Must be called continuously.
    * This function must be called in order for the tank to do anything and for

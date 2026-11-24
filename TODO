@@ -2,6 +2,8 @@ Drive motor stuff:
   - double-check WHEEL_ENCODER_DISTANCE_RATIO
   - make sure that a motor can spin-up without delay, assuming that it has been off
   - if one drive motor is in wait mode, the other drive motor should probably also wait. the effects of the lag can be most easily demonstrated with the motor_stress_test.
+  - the stall detection stuff is not currently working. something to do with spin-up delay.
+  - I see a lot of "discarding turret motor encoder interrupt" messages. Is this logic working okay? I need to go back to hardware_test to make sure turret degree rotation works correctly
 
 Battle stuff:
   - implement game logic like hit count, shot delay, etc.

@@ -1,5 +1,6 @@
-/* dumb_bot.ino
-A bot that finds and attacks a target. Not a particularly cunning foe.
+/* shooter_bot.ino
+A bot that finds a target and shoots at it. Not a particularly cunning foe.
+As of now, does not drive.
 */
 
 #include <PVision.h>

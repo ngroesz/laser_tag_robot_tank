@@ -1,4 +1,4 @@
-| Remote Button | Mode | Tests | Mode Details |
+| Remote Button | Mode | Components Tested | Mode Instructions |
 | --- | --- | --- | --- |
 | 1 | Drive | Drive motors | Up: drive forward <br /> Down: drive backwards <br /> Right: turn right <br /> Left: turn left <br /> OK: Stop|
 | 2 | Drive Measured | Drive motors, wheel encoders |  Up: drive forward 10 cm <br /> Down: drive backwards 10 cm<br /> Right: turn right 90 degrees <br /> Left: turn left 90 degrees<br /> OK: Stop|

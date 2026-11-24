@@ -84,7 +84,7 @@ void setup() {
 
   Serial.println("Setup routine has completed");
 
-  tank.set_ir_command_callback(process_ir_command);
+  //tank.set_ir_command_callback(process_ir_command);
 
   // the first thing we want to do is reconnoiter
   mode_function = begin_recon;
@@ -92,17 +92,7 @@ void setup() {
   Serial.println("finished setup");
 }
 
-// TODO: pause/unpause should be part of main tank library
 void process_ir_command(uint16_t command) {
-  if (command == IR_CODE_POUND) {
-    Serial.println("told to stop");
-    tank.drive_stop();
-    tank.turret_stop();
-    mode_function = NULL;
-  } else if (command = IR_CODE_ASTERISK) {
-    Serial.println("resuming");
-    mode_function = finish_recon;
-  }
 }
 
 void loop() {
