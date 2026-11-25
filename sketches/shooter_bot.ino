@@ -9,23 +9,27 @@ As of now, does not drive.
 
 #include "src/tank.h"
 
-//#define CAMERA_ENABLED
+#define CAMERA_ENABLED
 #define CAMERA_READ_DELAY 100
-//#define DISTANCE_ENABLED
+#define DEBUG_OUTPUT
+#define DISTANCE_ENABLED
 #define DISTANCE_MAX 8190
 #define DISTANCE_READ_DELAY 100
 
-unsigned long last_update_millis = 0;
+unsigned long last_camera_millis = 0;
+unsigned long last_distance_millis = 0;
 
 Tank tank;
 PVision ircam;
 VL53L0X sensor;
 
+bool target_active = false;
 struct target {
   uint16_t x;
   uint16_t y;
   uint16_t size;
 };
+struct target my_target;
 
 bool find_target(struct target& t) {
   byte result = ircam.read();
@@ -66,34 +70,34 @@ void setup() {
   Serial.println("Tank initialized.");
 #endif
 
-  if (CAMERA_ENABLED) {
+#ifdef CAMERA_ENABLED
     ircam.init();
 #ifdef DEBUG_OUTPUT
     Serial.println("Camera initialized.");
 #endif
-  }
+#endif
 
-  if (DISTANCE_ENABLED) {
-    sensor.setTimeout(500);
-    if (!sensor.init()) {
+#ifdef DISTANCE_ENABLED
+  sensor.setTimeout(500);
+  if (!sensor.init()) {
 #ifdef DEBUG_OUTPUT
-      Serial.println("Failed to detect and initialize sensor!");
+    Serial.println("Failed to detect and initialize sensor!");
 #endif
-      while (1) {
-      }
+    while (1) {
     }
-    sensor.startContinuous(SENSOR_READ_DELAY);
-#ifdef DEBUG_OUTPUT
-    Serial.println("Distance sensor initialized.");
-#endif
   }
+  sensor.startContinuous(DISTANCE_READ_DELAY);
+#ifdef DEBUG_OUTPUT
+  Serial.println("Distance sensor initialized.");
+#endif
+#endif
+  tank.setup_routine();
 }
 
 void loop() {
   unsigned long current_millis = millis();
 
-  if (current_millis > last_update_millis + SENSOR_READ_DELAY) {
-    struct target my_target;
+  if (current_millis > last_camera_millis + CAMERA_READ_DELAY) {
     if (find_target(my_target)) {
 #ifdef DEBUG_OUTPUT
       Serial.println("Target Detected");
@@ -104,16 +108,38 @@ void loop() {
       Serial.print(" Size: ");
       Serial.println(my_target.size);
 #endif
+      target_active = true;
+    } else {
+      target_active = false;
     }
 
-    uint16_t distance;
-    if (find_distance(distance)) {
-#ifdef DEBUG_OUTPUT
-      Serial.print("distance: ");
-      Serial.println(distance);
-#endif
-    }
-    last_update_millis = current_millis;
+    last_camera_millis = current_millis;
   }
+
+  if (target_active) {
+    if (my_target.x < 462) {
+      tank.turret_right();
+    } else if (my_target.x > 562) {
+      tank.turret_left();
+    } else {
+      tank.turret_stop();
+    }
+  } else {
+    tank.turret_stop();
+  }
+
+
+
+  if (current_millis > last_distance_millis + CAMERA_READ_DELAY) {
+//    uint16_t distance;
+//    if (find_distance(distance)) {
+//#ifdef DEBUG_OUTPUT
+//      Serial.print("distance: ");
+//      Serial.println(distance);
+//#endif
+//    }
+    last_distance_millis = current_millis;
+  }
+
   tank.loop();
 }

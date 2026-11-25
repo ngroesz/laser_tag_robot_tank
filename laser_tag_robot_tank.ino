@@ -1,1 +1,1 @@
-sketches/hardware_test.ino
+sketches/shooter_bot.ino

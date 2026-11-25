@@ -212,8 +212,8 @@ void turret_measured_test() {
   }
 }
 
-void setup_routine_test() { 
-  //tank.setup_routine(); 
+void setup_routine_test() {
+  //tank.setup_routine();
 }
 
 void led_test() {

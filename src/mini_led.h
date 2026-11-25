@@ -6,6 +6,10 @@
 #define BLINK_MILLIS 500
 #define MAX_LED_COUNT 3
 
+
+// Note that each LED carries its own delay millis.
+// So that if a LED is blinking, it blinks in independent timing from other LEDs.
+
 enum LedState { led_on, led_off, led_blinking };
 
 struct Led {
@@ -32,8 +36,6 @@ class MiniLed {
   void _initialize_led(struct Led& _led, const uint8_t led_pin);
   void _reset_led(struct Led& _led);
   void _update_led(struct Led& _led);
-  // void _led_on(struct Led & _led);
-  // void _led_off(struct Led & _led);
 
   void _print_led_state(struct Led& _led);
 

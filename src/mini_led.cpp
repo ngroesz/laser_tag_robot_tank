@@ -23,17 +23,13 @@ void MiniLed::loop() {
 }
 
 void MiniLed::on(uint8_t led_index) {
-  Led led = _leds[led_index];
-
-  led.state = led_on;
-  digitalWrite(led.led_pin, _on_state);
+  _leds[led_index].state = led_on;
+  digitalWrite(_leds[led_index].led_pin, _on_state);
 }
 
 void MiniLed::off(uint8_t led_index) {
-  Led led = _leds[led_index];
-
-  led.state = led_off;
-  digitalWrite(led.led_pin, _off_state);
+  _leds[led_index].state = led_off;
+  digitalWrite(_leds[led_index].led_pin, _off_state);
 }
 
 void MiniLed::toggle(uint8_t led_index) {
@@ -45,12 +41,11 @@ void MiniLed::toggle(uint8_t led_index) {
 }
 
 void MiniLed::blink(const uint8_t led_index, const uint8_t blink_count = 0) {
-  Led& led_to_update = _leds[led_index];
-  led_to_update.state = led_blinking;
-  led_to_update.blink_count = 0;
-  led_to_update.target_blinks = blink_count;
-  led_to_update.last_change_millis = millis();
-  on(led_index);
+  _leds[led_index].state = led_blinking;
+  _leds[led_index].blink_count = 0;
+  _leds[led_index].target_blinks = blink_count;
+  _leds[led_index].last_change_millis = millis();
+  digitalWrite(_leds[led_index].led_pin, _on_state);
 }
 
 void MiniLed::all_on() {
@@ -99,22 +94,4 @@ void MiniLed::_update_led(struct Led& _led) {
       }
     }
   }
-}
-
-// TODO: remove me
-void MiniLed::_print_led_state(struct Led& _led) {
-  Serial.print("LED state for pin: ");
-  Serial.println(_led.led_pin);
-
-  Serial.print("State: ");
-  Serial.println(_led.state);
-
-  Serial.print("blink_count: ");
-  Serial.println(_led.blink_count);
-
-  Serial.print("target_blinks: ");
-  Serial.println(_led.target_blinks);
-
-  Serial.print("last_change_millis: ");
-  Serial.println(_led.last_change_millis);
 }

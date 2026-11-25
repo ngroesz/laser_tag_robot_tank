@@ -1,3 +1,5 @@
+# TODO: exit early if board not detected
+
 BOARD = arduino:avr:uno
 PATH = $(PWD)
 $(eval PORT=$(shell sh -c "arduino-cli board list | grep -E 'arduino:avr|Serial Port \(USB\)'" | awk '{print $$1}'))

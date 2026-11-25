@@ -100,7 +100,7 @@ class Tank {
    * This function should be called at the end of your bot's setup() routine
    *
    * This function:
-   *  - waits until OK is pressed
+   *  - waits until ASTERISK is pressed
    *  - then calibrates turret
    *  - then waits until OK is pressed before returning
    *
@@ -111,7 +111,7 @@ class Tank {
    * It isn't necessary to use this during development. If you just need the
    * turret to be calibrated, you can call turret_calibrate(), instead
    */
-  //void setup_routine();
+  void setup_routine();
 
   /** @brief Updates the tank. Must be called continuously.
    * This function must be called in order for the tank to do anything and for
@@ -238,7 +238,7 @@ class Tank {
   void _initialize_battle_status();
   void _maybe_register_hit();
   void _pause_unpause();
-  void _game_over();
+  void _battle_over();
   void _set_leds_to_hit_count();
   void _reset_leds();
 
