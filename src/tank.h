@@ -21,10 +21,10 @@ typedef void (*CallbackFunction)();
 typedef void (*CallbackFunctionWithBool)(bool);
 typedef void (*CallbackFunctionWithInt)(uint16_t);
 
-enum TankBattleStatus { inactive, active, dead };
+enum TankBattleStatus { _inactive, _active, _dead };
 
 struct BattleStatus {
-  TankBattleStatus status = inactive;
+  TankBattleStatus status = _inactive;
   uint8_t hit_count = 0;
   uint32_t last_hit_millis = 0;
 };
@@ -96,6 +96,12 @@ class Tank {
   /// Tank library. This should probably be called sometime during your setup()
   /// function.
   void initialize();
+
+  /** Brief: Initialize hit counter to zero and set battle status to active.
+   * Importantly, this should NOT be called in your actual combat bot. But
+   * can be used for development purposes.
+  */
+  void initialize_battle_status();
 
   /** Brief: Do turret calibration and setup in preparation for battle
    *
@@ -180,6 +186,8 @@ class Tank {
   void drive_stop();
 
   void turret_calibrate();
+  // Warning: an actual battle bot should not call this
+  void turret_set_calibrated();
   void turret_left();
   void turret_right();
   void turret_left_degrees(const uint16_t degrees);
@@ -238,7 +246,6 @@ class Tank {
   void _write_motor_control_code(const unsigned char& control_code);
   bool _tank_is_active();
 
-  void _initialize_battle_status();
   void _maybe_register_hit();
   void _pause_unpause();
   void _battle_over();

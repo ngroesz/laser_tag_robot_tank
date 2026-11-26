@@ -30,7 +30,7 @@
 
 // the piezo speaker is annoying, if you do not want to hear it during
 // development then comment-out this flag
-#define SOUND_ENABLED
+//#define SOUND_ENABLED
 
 // you may wish to do programming/debugging without the motors enabled, if so
 // comment-out this flag if you are programming with just a 5V USB connecting

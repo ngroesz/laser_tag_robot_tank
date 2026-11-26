@@ -138,6 +138,20 @@ void Tank::initialize() {
 #endif
 }
 
+void Tank::initialize_battle_status() {
+#ifdef SOUND_ENABLED
+  tone(SPEAKER_PIN, 880, 500);
+#endif
+
+#ifdef TANK_DEBUG_OUTPUT
+  Serial.println(F("Battle initializing."));
+#endif
+
+  _battle_status.status = _active;
+  _battle_status.hit_count = 0;
+  _battle_status.last_hit_millis = 0;
+}
+
 void Tank::setup_routine() {
 #ifdef SOUND_ENABLED
   tone(SPEAKER_PIN, 220, 500);
@@ -177,7 +191,7 @@ void Tank::setup_routine() {
   } while (_ir_status.last_command != IR_CODE_OK);
   _ir_status.last_command = 0;
 
-  _initialize_battle_status();
+  initialize_battle_status();
   _set_leds_to_hit_count();
 }
 
@@ -333,6 +347,11 @@ void Tank::turret_calibrate() {
 #ifdef TANK_DEBUG_OUTPUT
   Serial.println(F("turret has been calibrated"));
 #endif
+}
+
+void Tank::turret_set_calibrated() {
+  _turret_status.calibrated = true;
+  _turret_status.encoder_count = 0;
 }
 
 void Tank::turret_left() {
@@ -594,7 +613,7 @@ void Tank::_write_motor_control_code(const unsigned char& control_code) {
 }
 
 bool Tank::_tank_is_active() {
-  return !_paused && _battle_status.status != dead;
+  return !_paused && _battle_status.status != _dead;
 }
 
 void Tank::_process_interrupt_flags(const uint32_t current_millis) {
@@ -641,8 +660,9 @@ void Tank::_process_encoder_flags(const uint32_t current_millis) {
 #endif
     // when the turret passes the calibration point (the 0 degree point), we
     // reset the encoder_count variable. since we track the traversal distance
-    // to a target using a target_encoder_count, we have to account for the
-    // difference when we set the encoder_count variable back to 0
+    // to a target using a target_encoder_count, if there is an active turret
+    // target then we have to account for the difference when we set the
+    // encoder_count variable back to 0
     if (_turret_status.target_encoder_count != 0) {
       int16_t encoder_difference = abs(_turret_status.target_encoder_count -
                                        _turret_status.encoder_count);
@@ -657,8 +677,7 @@ void Tank::_process_encoder_flags(const uint32_t current_millis) {
 #endif
     }
 
-    _turret_status.calibrated = true;
-    _turret_status.encoder_count = 0;
+    turret_set_calibrated();
   }
 
   if (_left_wheel_encoder_interrupt_flag) {
@@ -760,8 +779,8 @@ void Tank::_process_ir_flags() {
         _reset_leds();
       }
 
-      if (_battle_status.status == dead) {
-        _initialize_battle_status();
+      if (_battle_status.status == _dead) {
+        initialize_battle_status();
       }
     }
 
@@ -880,20 +899,6 @@ void Tank::_motor_stall_detected() {
   _tank_led.blink(2);
 }
 
-void Tank::_initialize_battle_status() {
-#ifdef SOUND_ENABLED
-  tone(SPEAKER_PIN, 880, 500);
-#endif
-
-#ifdef TANK_DEBUG_OUTPUT
-  Serial.println(F("Battle initializing."));
-#endif
-
-  _battle_status.status = active;
-  _battle_status.hit_count = 0;
-  _battle_status.last_hit_millis = 0;
-}
-
 void Tank::_maybe_register_hit() {
   if (_tank_is_active()) {
 #ifdef TANK_DEBUG_OUTPUT
@@ -929,7 +934,7 @@ void Tank::_battle_over() {
 #ifdef TANK_DEBUG_OUTPUT
   Serial.println(F("You have died."));
 #endif
-  _battle_status.status = dead;
+  _battle_status.status = _dead;
 
 #ifdef SOUND_ENABLED
   tone(SPEAKER_PIN, 220, 2000);
@@ -979,7 +984,7 @@ void Tank::_reset_leds() {
   _tank_led.off(1);
   _tank_led.off(2);
 
-  if (_battle_status.status == active) {
+  if (_battle_status.status == _active) {
     _set_leds_to_hit_count();
   }
 }
