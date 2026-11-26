@@ -38,9 +38,8 @@ void _bump_rear_interrupt() {
 }
 
 void handleReceivedTinyIRData() {
-  // if (TinyIRReceiverData.Flags != IRDATA_FLAGS_IS_REPEAT &&
-  // TinyIRReceiverData.Flags != IRDATA_FLAGS_PARITY_FAILED) {
-  if (TinyIRReceiverData.Flags != IRDATA_FLAGS_PARITY_FAILED) {
+  if (TinyIRReceiverData.Flags != IRDATA_FLAGS_IS_REPEAT &&
+     TinyIRReceiverData.Flags != IRDATA_FLAGS_PARITY_FAILED) {
     _ir_command_received = true;
     _ir_command = TinyIRReceiverData.Command;
   }
@@ -141,7 +140,7 @@ void Tank::initialize() {
 
 void Tank::setup_routine() {
 #ifdef SOUND_ENABLED
-  tone(SPEAKER_PIN, 150, 220);
+  tone(SPEAKER_PIN, 220, 500);
 #endif
 
   _tank_led.all_off();
@@ -163,7 +162,7 @@ void Tank::setup_routine() {
   turret_calibrate();
 
 #ifdef SOUND_ENABLED
-  tone(SPEAKER_PIN, 150, 440);
+  tone(SPEAKER_PIN, 440, 500);
 #endif
 
   _tank_led.all_off();
@@ -177,14 +176,6 @@ void Tank::setup_routine() {
     loop();
   } while (_ir_status.last_command != IR_CODE_OK);
   _ir_status.last_command = 0;
-
-#ifdef SOUND_ENABLED
-  tone(SPEAKER_PIN, 150, 880);
-#endif
-
-#ifdef TANK_DEBUG_OUTPUT
-  Serial.println(F("Battle initializing."));
-#endif
 
   _initialize_battle_status();
   _set_leds_to_hit_count();
@@ -217,6 +208,13 @@ void Tank::set_hit_callback(CallbackFunctionWithInt callback) {
 }
 
 void Tank::fire() {
+  if (!_tank_is_active()) {
+#ifdef TANK_DEBUG_OUTPUT
+  Serial.println(F("Refusing to fire."));
+#endif
+    return;
+  }
+
   if (_last_fire_millis + RELOAD_MILLIS > millis()) {
     sendNEC(IR_SEND_PIN, 0x0, IR_CODE_ASTERISK, 0);
 #ifdef SOUND_ENABLED
@@ -583,12 +581,20 @@ void Tank::_write_motor_control_code(const unsigned char& control_code) {
   Serial.println(control_code, BIN);
 #endif
 
-  if (!_paused) {
+  if (_tank_is_active()) {
     digitalWrite(SHIFT_CLEAR_PIN, LOW);
     shiftOut(SHIFT_DATA_PIN, SHIFT_CLOCK_PIN, MSBFIRST, control_code);
     digitalWrite(SHIFT_CLEAR_PIN, HIGH);
   }
+#else
+#ifdef TANK_DEBUG_OUTPUT
+  Serial.println(F("MOTORS_ENABLED is not defined. Not moving."));
 #endif
+#endif
+}
+
+bool Tank::_tank_is_active() {
+  return !_paused && _battle_status.status != dead;
 }
 
 void Tank::_process_interrupt_flags(const uint32_t current_millis) {
@@ -753,6 +759,10 @@ void Tank::_process_ir_flags() {
         _motor_stall_detection_activated = false;
         _reset_leds();
       }
+
+      if (_battle_status.status == dead) {
+        _initialize_battle_status();
+      }
     }
 
     if (_ir_status.ir_command_callback) {
@@ -871,17 +881,31 @@ void Tank::_motor_stall_detected() {
 }
 
 void Tank::_initialize_battle_status() {
-  _battle_status.active = true;
+#ifdef SOUND_ENABLED
+  tone(SPEAKER_PIN, 880, 500);
+#endif
+
+#ifdef TANK_DEBUG_OUTPUT
+  Serial.println(F("Battle initializing."));
+#endif
+
+  _battle_status.status = active;
   _battle_status.hit_count = 0;
   _battle_status.last_hit_millis = 0;
 }
 
 void Tank::_maybe_register_hit() {
-  if (!_battle_status.active || _paused) {
+  if (_tank_is_active()) {
+#ifdef TANK_DEBUG_OUTPUT
+    Serial.println(F("Tank not active. Discarding hit."));
+#endif
     return;
   }
 
   if (_battle_status.last_hit_millis + INVINCIBILITY_MILLIS > millis()) {
+#ifdef TANK_DEBUG_OUTPUT
+    Serial.println(F("Shot too soon after last hit. Discarding hit."));
+#endif
     return;
   }
 
@@ -890,6 +914,7 @@ void Tank::_maybe_register_hit() {
   if (_battle_status.hit_count == 4) {
     _battle_over();
   } else {
+    _battle_status.last_hit_millis = millis();
     if (_hit_callback) {
       _hit_callback(_battle_status.hit_count);
     }
@@ -901,9 +926,15 @@ void Tank::_maybe_register_hit() {
 }
 
 void Tank::_battle_over() {
+#ifdef TANK_DEBUG_OUTPUT
+  Serial.println(F("You have died."));
+#endif
+  _battle_status.status = dead;
+
 #ifdef SOUND_ENABLED
   tone(SPEAKER_PIN, 220, 2000);
 #endif
+
   _tank_led.blink(0);
   _tank_led.blink(1);
   _tank_led.blink(2);
@@ -948,7 +979,7 @@ void Tank::_reset_leds() {
   _tank_led.off(1);
   _tank_led.off(2);
 
-  if (_battle_status.active) {
+  if (_battle_status.status == active) {
     _set_leds_to_hit_count();
   }
 }

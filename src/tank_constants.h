@@ -1,12 +1,14 @@
 #ifndef TANK_CONSTANTS_H
 #define TANK_CONSTANTS_H
 
-// pause time between shots. changing this will change gameplay.
-#define RELOAD_MILLIS 1000
+/* Begin Battle Constants */
+// These constants affect how the battle is conducted.
+// pause time between shots.
+#define RELOAD_MILLIS 2000
 
-// after a tank is hit, is is invincible for this long. changing this will
-// change gameplay.
+// after a tank is hit, is is invincible for this long.
 #define INVINCIBILITY_MILLIS 5000
+/* End Battle Constants */
 
 // if encoder interrupts happen closer than this interval, they will be
 // discarded this is to prevent transient signals from upsetting the count the

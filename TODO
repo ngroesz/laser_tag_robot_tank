@@ -5,12 +5,5 @@ Drive motor stuff:
   - the stall detection stuff is not currently working. something to do with spin-up delay.
   - I see a lot of "discarding turret motor encoder interrupt" messages. Is this logic working okay? I need to go back to hardware_test to make sure turret degree rotation works correctly
 
-Battle stuff:
-  - implement game logic like hit count, shot delay, etc.
-
 Internal cleanup:
   - maybe make degrees be from 1-360, that way target sentinels could match
-
-Bugs:
-  - rear bump seems to trigger right wheel encoder. i do not know why this. it's maybe not a huge problem but feels wrong.
-    UPDATE: I think blue tank has some problem with right wheel encoder. red tank seems to work fine

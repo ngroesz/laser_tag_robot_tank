@@ -1,22 +1,29 @@
-# TODO: exit early if board not detected
+BOARD       = arduino:avr:uno
+SKETCH      = $(CURDIR)
+ARDUINO_CLI = /usr/local/bin/arduino-cli
 
-BOARD = arduino:avr:uno
-PATH = $(PWD)
-$(eval PORT=$(shell sh -c "arduino-cli board list | grep -E 'arduino:avr|Serial Port \(USB\)'" | awk '{print $$1}'))
+.PHONY: compile clean format upload docs
 
 compile:
-	/usr/local/bin/arduino-cli compile --library $(PWD)/src -b $(BOARD) $(PATH)
+	$(ARDUINO_CLI) compile --library "$(CURDIR)/src" -b $(BOARD) "$(SKETCH)"
 
 clean:
-	/usr/local/bin/arduino-cli compile --clean --library $(PWD)/src -b $(BOARD) $(PATH)
+	$(ARDUINO_CLI) compile --clean --library "$(CURDIR)/src" -b $(BOARD) "$(SKETCH)"
 
 format:
-	/usr/bin/find . -type f \( -iname "*.h" -o -iname "*.cpp" -o -iname "*.ino" \) -print0 | /usr/bin/xargs -0 /usr/bin/clang-format -i
+	/usr/bin/find . -type f \( -iname "*.h" -o -iname "*.cpp" -o -iname "*.ino" \) -print0 | /usr/bin/xargs -0 -r /usr/bin/clang-format -i
 
 upload: compile
-	/usr/local/bin/arduino-cli upload -b $(BOARD) -p $(PORT) $(PATH)
+	@port="$(PORT)"; \
+	if [ -z "$$port" ]; then \
+		port=$$($(ARDUINO_CLI) board list | awk '/arduino:avr|Serial Port \(USB\)/ {print $$1; exit}'); \
+	fi; \
+	if [ -z "$$port" ]; then \
+		echo "No Arduino port found. Run: make upload PORT=/dev/ttyXXX" >&2; \
+		exit 1; \
+	fi; \
+	echo "Uploading to $$port"; \
+	$(ARDUINO_CLI) upload -b $(BOARD) -p "$$port" "$(SKETCH)"
 
-docs: FORCE
+docs:
 	/usr/bin/doxygen Doxyfile
-
-FORCE: ;

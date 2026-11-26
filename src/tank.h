@@ -21,8 +21,10 @@ typedef void (*CallbackFunction)();
 typedef void (*CallbackFunctionWithBool)(bool);
 typedef void (*CallbackFunctionWithInt)(uint16_t);
 
+enum TankBattleStatus { inactive, active, dead };
+
 struct BattleStatus {
-  bool active = 0;
+  TankBattleStatus status = inactive;
   uint8_t hit_count = 0;
   uint32_t last_hit_millis = 0;
 };
@@ -234,6 +236,7 @@ class Tank {
                                         uint32_t motor_stall_detection_millis);
   void _control_motor(MotorStatus& status, const MotorDirection direction);
   void _write_motor_control_code(const unsigned char& control_code);
+  bool _tank_is_active();
 
   void _initialize_battle_status();
   void _maybe_register_hit();
