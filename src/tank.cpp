@@ -467,7 +467,10 @@ const int16_t Tank::normalize_angle(const int16_t degrees) {
 // end public functions
 
 // begin private functions
-void Tank::_turret_left() { _control_motor(_turret_motor_status, reverse); }
+void Tank::_turret_left() {
+  Serial.println("turret left");
+  _control_motor(_turret_motor_status, reverse);
+}
 
 void Tank::_turret_right() { _control_motor(_turret_motor_status, forward); }
 
@@ -631,9 +634,6 @@ void Tank::_process_encoder_flags(const uint32_t current_millis) {
         current_millis) {
       _turret_motor_status.last_encoder_millis = current_millis;
 
-      Serial.print(F("turret interrupt "));
-      Serial.println(current_millis);
-
       if (_turret_motor_status.last_direction == forward) {
         _turret_status.encoder_count++;
       } else if (_turret_motor_status.last_direction == reverse) {
@@ -642,13 +642,13 @@ void Tank::_process_encoder_flags(const uint32_t current_millis) {
       _check_turret_target();
 #ifdef TANK_DEBUG_OUTPUT
       if (_turret_status.encoder_count % 10 == 0) {
-        Serial.print(F("turret encoder_count: "));
-        Serial.println(_turret_status.encoder_count);
+        //Serial.print(F("turret encoder_count: "));
+        //Serial.println(_turret_status.encoder_count);
       }
 #endif
     } else {
 #ifdef TANK_DEBUG_OUTPUT
-      Serial.println(F("discarding turret motor encoder interrupt"));
+      //Serial.println(F("discarding turret motor encoder interrupt"));
 #endif
     }
   }
@@ -682,8 +682,8 @@ void Tank::_process_encoder_flags(const uint32_t current_millis) {
 
   if (_left_wheel_encoder_interrupt_flag) {
 #ifdef TANK_DEBUG_OUTPUT
-    Serial.print(F("left wheel encoder interrupt "));
-    Serial.println(current_millis);
+    //Serial.print(F("left wheel encoder interrupt "));
+    //Serial.println(current_millis);
 #endif
     _left_wheel_encoder_interrupt_flag = false;
 
@@ -698,15 +698,15 @@ void Tank::_process_encoder_flags(const uint32_t current_millis) {
       _check_drive_targets();
     } else {
 #ifdef TANK_DEBUG_OUTPUT
-      Serial.print(F("discarding left wheel encoder interrupt"));
+      //Serial.print(F("discarding left wheel encoder interrupt"));
 #endif
     }
   }
 
   if (_right_wheel_encoder_interrupt_flag) {
 #ifdef TANK_DEBUG_OUTPUT
-    Serial.print(F("right wheel encoder interrupt "));
-    Serial.println(current_millis);
+    //Serial.print(F("right wheel encoder interrupt "));
+    //Serial.println(current_millis);
 #endif
     _right_wheel_encoder_interrupt_flag = false;
 
@@ -721,7 +721,7 @@ void Tank::_process_encoder_flags(const uint32_t current_millis) {
       _check_drive_targets();
     } else {
 #ifdef TANK_DEBUG_OUTPUT
-      Serial.print(F("discarding right wheel encoder interrupt"));
+    //  Serial.print(F("discarding right wheel encoder interrupt"));
 #endif
     }
   }
@@ -975,6 +975,8 @@ void Tank::_pause_unpause() {
     _reset_leds();
   } else {
     _paused = true;
+    _drive_stop();
+    turret_stop();
     _tank_led.blink(0);
   }
 }
